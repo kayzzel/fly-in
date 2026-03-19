@@ -1,0 +1,19 @@
+fly-in
+	|-> Makefile
+	|-> README.md
+	|-> fly_in.py
+	|-> src/
+			|-> utils/
+			|-> images/
+					|-> drones.img
+			|-> features/
+					|-> parser/
+					|-> algorithms/
+					|-> map/
+							|-> map.py
+							|-> drones.py
+							|-> zone.py
+							|-> connection.py
+					|-> display/
+					|-> output/
+	|-> tests/
