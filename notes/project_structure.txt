@@ -4,10 +4,14 @@ fly-in
 	|-> fly_in.py
 	|-> src/
 			|-> utils/
+				types.py
 			|-> images/
 					|-> drones.img
 			|-> features/
 					|-> parser/
+						map_data.py
+						hub_data.py
+						connection_data.py
 					|-> algorithms/
 					|-> map/
 							|-> map.py
@@ -16,4 +20,5 @@ fly-in
 							|-> connection.py
 					|-> display/
 					|-> output/
+	|-> maps/
 	|-> tests/

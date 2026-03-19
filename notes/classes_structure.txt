@@ -1,3 +1,38 @@
+class Color(str, Enum):
+	...
+	
+class ZoneType(str, Enum):
+	NORMAL = "normal"
+	BLOCKED = "blocked"
+	PRIORITY = "priority"
+	RESTRICTED = "restricted"
+
+class HubData:
+	name: str
+	x: int
+	y: int
+	type: ZoneType
+	color: Color | None
+	max_drones: int
+
+class ConnectionData:
+	hub1: HubData
+	hub2: HubData
+	max_link_capacity: int
+
+class MapData:
+	drone_ng: int
+	start_hub: HubData | None
+	end_hub: HubData | None
+	hubs: list[HubData]
+	connections: list[ConnectionData]
+
+	def parsing(self, filename: str) -> str
+
+	def pars_hub(self, line: str) -> HubData | None
+
+	def pars_connection(self, line: str) -> ConnectionData | None
+	
 class Map
 
 class Drone
