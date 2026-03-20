@@ -34,6 +34,7 @@ class HubType(str, Enum):
     PRIORITY -> prefered hub, same cost as NORMAL
     RESTRICTED -> dangerous hub (cost -> 2)
     """
+
     NORMAL = "normal"
     BLOCKED = "blocked"
     PRIORITY = "priority"

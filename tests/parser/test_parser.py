@@ -1,16 +1,18 @@
-from .test_subject_maps import subject_maps_test_parsing
-from .test_custom_maps import valid_maps_test_parsing
 from .test_custom_false_maps import invalid_maps_test_parsing
+from .test_custom_maps import valid_maps_test_parsing
+from .test_subject_maps import subject_maps_test_parsing
 
 
 def test_parsing() -> None:
-    print("""
+    print(
+        """
 choose the test you want to do:
     -> subject maps        (1)
     -> valid custom maps   (2)
     -> invalid custom maps (3)
     -> all                 (4)
-    """)
+    """
+    )
 
     choice: str = input("choice: ")
 
