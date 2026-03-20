@@ -1,8 +1,10 @@
 #-------------------------------- VARIABLES ----------------------------------#
+
 NAME		=	fly_in.py
 MAP			?=	maps/easy/01_linear_path.txt
 
 #-------------------------------- RULES --------------------------------------#
+
 .PHONY: all install run debug clean fclean re reset lint test format check help
 
 all: install run
@@ -32,7 +34,11 @@ lint:
 	poetry run mypy . --warn-return-any --warn-unused-ignores --ignore-missing-imports \
 		--disallow-untyped-defs --check-untyped-defs
 
-# Run format then lint
+lint-strict:
+	poetry run flake8 .
+	poetry run mypy . --strict
+
+
 check: format lint
 
 clean:
