@@ -28,7 +28,7 @@ class MapData:
             with open(filename, "r") as file:
                 lines = file.read().split("\n")
 
-        # If it fails print an error an early return with False
+        # If it fails raise an error an early return with False
         except OSError as err:
             raise OSError(
                 f"Couldn't open \"{filename}\" because:\n"
@@ -293,7 +293,6 @@ class MapData:
 
         key, value = data_split
 
-        print(key)
         if key != "max_link_capacity":
             if not value.isdigit():
                 return None, (

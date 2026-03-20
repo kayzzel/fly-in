@@ -19,6 +19,8 @@ class Color(str, Enum):
     VIOLET = "violet"
     CRIMSON = "crimson"
     RAINBOW = "rainbow"
+    GRAY = "gray"
+    WHITE = "white"
 
 
 class HubType(str, Enum):
