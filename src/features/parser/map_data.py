@@ -4,7 +4,7 @@ from ... utils.types import Color, HubType
 
 
 class MapData:
-    def __init__(self):
+    def __init__(self) -> None:
         self.__drones_nb: int = 0
         self.__start_hub: HubData | None = None
         self.__end_hub: HubData | None = None
