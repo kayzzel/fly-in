@@ -21,7 +21,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install flake8
-          pip intall mypy
+          pip install mypy
 
       - name: Run flake8
         run: |
