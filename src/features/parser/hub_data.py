@@ -18,3 +18,9 @@ class HubData:
         self.hub_type: HubType = hub_type
         self.color: Color | None = color
         self.max_drones: int = max_drones
+
+    def __str__(self) -> str:
+        return (
+                f"{self.name}, ({self.x}, {self.y}) [{self.hub_type}, "
+                f"{self.color}, {self.max_drones}]"
+                )

@@ -3,6 +3,22 @@ from enum import Enum
 
 class Color(str, Enum):
     RED = "red"
+    GREEN = "green"
+    BLUE = "blue"
+    YELLOW = "yellow"
+    ORANGE = "orange"
+    CYAN = "cyan"
+    PURPLE = "purple"
+    BROWN = "brown"
+    LIME = "lime"
+    MAGENTA = "magenta"
+    GOLD = "gold"
+    BLACK = "black"
+    MAROON = "maroon"
+    DARKRED = "darkred"
+    VIOLET = "violet"
+    CRIMSON = "crimson"
+    RAINBOW = "rainbow"
 
 
 class HubType(str, Enum):
