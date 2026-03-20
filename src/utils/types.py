@@ -2,7 +2,7 @@ from enum import Enum
 
 
 class Color(str, Enum):
-    ...
+    RED = "red"
 
 
 class HubType(str, Enum):
