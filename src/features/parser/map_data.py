@@ -1,6 +1,16 @@
 from ...utils.types import Color, HubType
 from .connection_data import ConnectionData
 from .hub_data import HubData
+from typing import TypedDict
+
+
+class MapDataDict(TypedDict):
+
+    drone_nb: int
+    start_hub: HubData | None
+    end_hub: HubData | None
+    hubs: list[HubData]
+    connections: list[ConnectionData]
 
 
 class MapData:
@@ -325,3 +335,13 @@ class MapData:
                 value += f"\t{connection}\n"
 
         return value
+
+    def get_map_data(self) -> MapDataDict:
+
+        return {
+            "drone_nb": self.__drones_nb,
+            "start_hub": self.__start_hub,
+            "end_hub": self.__end_hub,
+            "hubs": self.__hubs,
+            "connections": self.__connections,
+        }
