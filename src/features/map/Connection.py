@@ -32,7 +32,21 @@ class Connection:
 
         if len(hub1) != 1:
             raise ValueError(
-                    ""
+                    "\"{data.hub1}\" is not defined as a hub in the map"
+                    )
+
+        if len(hub2) != 1:
+            raise ValueError(
+                    "\"{data.hub2}\" is not defined as a hub in the map"
+                    )
+
+        if len([
+                c for c in connections
+                if c.hub1 == data.hub1 and c.hub2 == data.hub2
+                ]) != 0:
+            raise ValueError(
+                    f"The connection between {data.hub1} and {data.hub2} "
+                    "is already defined"
                     )
 
         if (not isinstance(data.max_link_capacity, int) or
