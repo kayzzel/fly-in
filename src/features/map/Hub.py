@@ -1,6 +1,7 @@
 from __future__ import annotations
-from ..parser.hub_data import HubData
+
 from ...utils.types import Color, HubType
+from ..parser.hub_data import HubData
 
 
 class Hub:
@@ -14,45 +15,40 @@ class Hub:
 
         self.__create_hub(data, hubs)
 
-    def __create_hub(self, data: HubData, hubs: list[Hub]):
+    def __create_hub(self, data: HubData, hubs: list[Hub]) -> None:
 
-        hubs_coord: list[tuple[int, int]] = [
-                (hub.x, hub.y) for hub in hubs
-            ]
+        hubs_coord: list[tuple[int, int]] = [(hub.x, hub.y) for hub in hubs]
 
-        hubs_names: list[str] = [
-                hub.name for hub in hubs
-            ]
+        hubs_names: list[str] = [hub.name for hub in hubs]
 
         if data.name in hubs_names:
             raise ValueError(
-                    f"Hub \"{data.name}\" is already defined in the Hub list"
-                )
+                f'Hub "{data.name}" is already defined in the Hub list'
+            )
 
         if (data.x, data.y) in hubs_coord:
             raise ValueError(
-                    f"Hub \"{data.name}\" is on top of another Hub"
-                    f"(coord: (x: {data.x}, y: {data.y}))"
-                )
+                f'Hub "{data.name}" is on top of another Hub'
+                f"(coord: (x: {data.x}, y: {data.y}))"
+            )
 
         if data.hub_type not in HubType._value2member_map_:
             raise ValueError(
-                    "The zone type is not in the defined one -> "
-                    "normal, blocked, priority, restricted "
-                    f"(zone type: {data.hub_type})"
-                )
+                "The zone type is not in the defined one -> "
+                "normal, blocked, priority, restricted "
+                f"(zone type: {data.hub_type})"
+            )
 
-        if data.color not in Color._value2member_map_:
+        if data.color not in Color._value2member_map_ and data.color:
             raise ValueError(
-                    "The color is not in the defined one "
-                    f"(color: {data.color})"
-                )
+                "The color is not in the defined one " f"(color: {data.color})"
+            )
 
         if not isinstance(data.max_drones, int) or data.max_drones < 0:
             raise ValueError(
-                    "The number of drones must be a positive int "
-                    f"(max drones: {data.max_drones})"
-                )
+                "The number of drones must be a positive int "
+                f"(max drones: {data.max_drones})"
+            )
 
         self.name = data.name
         self.x = data.x

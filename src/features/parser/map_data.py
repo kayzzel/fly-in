@@ -1,7 +1,8 @@
+from typing import TypedDict
+
 from ...utils.types import Color, HubType
 from .connection_data import ConnectionData
 from .hub_data import HubData
-from typing import TypedDict
 
 
 class MapDataDict(TypedDict):
@@ -190,6 +191,9 @@ class MapData:
         zone: HubType = HubType.NORMAL
         color: Color | None = None
         max_drones: int = 1
+
+        if line.startswith("start_hub: "):
+            max_drones = self.__drones_nb
 
         seted_key: list[str] = []
 

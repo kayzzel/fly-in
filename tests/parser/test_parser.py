@@ -1,38 +1,71 @@
-from .test_custom_false_maps import invalid_maps_test_parsing
-from .test_custom_maps import valid_maps_test_parsing
-from .test_subject_maps import subject_maps_test_parsing
+from pathlib import Path
+
+import pytest
+
+from src.features.parser import MapData
+
+# Anchors
+TEST_DIR = Path(__file__).parent  # tests/parser/
+ROOT_DIR = TEST_DIR.parent.parent  # project root
 
 
-def test_parsing() -> None:
-    print(
-        """
-choose the test you want to do:
-    -> subject maps        (1)
-    -> valid custom maps   (2)
-    -> invalid custom maps (3)
-    -> all                 (4)
-    """
-    )
-
-    choice: str = input("choice: ")
-
-    if choice == "1":
-        subject_maps_test_parsing()
-
-    elif choice == "2":
-        valid_maps_test_parsing()
-
-    elif choice == "3":
-        invalid_maps_test_parsing()
-
-    elif choice == "4":
-        subject_maps_test_parsing()
-        valid_maps_test_parsing()
-        invalid_maps_test_parsing()
-
-    else:
-        print("/!\\ INVALID choice")
+def _should_parse(path: Path) -> MapData:
+    map_data = MapData()
+    map_data.parsing(str(path))
+    return map_data
 
 
-if __name__ == "__main__":
-    test_parsing()
+# ── invalid maps ─────────────────────────────────────────────────────────────
+
+
+INVALID_MAPS = [
+    TEST_DIR / "invalid_maps" / f"map_{i}.txt" for i in range(1, 11)
+]
+
+
+@pytest.mark.parametrize(
+    "map_path", INVALID_MAPS, ids=[f"map_{i}" for i in range(1, 11)]
+)
+def test_invalid_map_raises(map_path: Path) -> None:
+    with pytest.raises(Exception):
+        _should_parse(map_path)
+
+
+# ── valid custom maps ────────────────────────────────────────────────────────
+
+
+VALID_MAPS = [TEST_DIR / "valid_maps" / f"map_{i}.txt" for i in range(1, 11)]
+
+
+@pytest.mark.parametrize(
+    "map_path", VALID_MAPS, ids=[f"map_{i}" for i in range(1, 11)]
+)
+def test_valid_map_parses(map_path: Path) -> None:
+    map_data = _should_parse(map_path)
+    assert map_data is not None
+
+
+# ── subject maps ─────────────────────────────────────────────────────────────
+
+
+SUBJECT_MAPS = [
+    ROOT_DIR / "maps/easy/01_linear_path.txt",
+    ROOT_DIR / "maps/easy/02_simple_fork.txt",
+    ROOT_DIR / "maps/easy/03_basic_capacity.txt",
+    ROOT_DIR / "maps/medium/01_dead_end_trap.txt",
+    ROOT_DIR / "maps/medium/02_circular_loop.txt",
+    ROOT_DIR / "maps/medium/03_priority_puzzle.txt",
+    ROOT_DIR / "maps/hard/01_maze_nightmare.txt",
+    ROOT_DIR / "maps/hard/02_capacity_hell.txt",
+    ROOT_DIR / "maps/hard/03_ultimate_challenge.txt",
+    ROOT_DIR / "maps/challenger/01_the_impossible_dream.txt",
+]
+
+
+SUBJECT_IDS = [p.stem for p in SUBJECT_MAPS]
+
+
+@pytest.mark.parametrize("map_path", SUBJECT_MAPS, ids=SUBJECT_IDS)
+def test_subject_map_parses(map_path: Path) -> None:
+    map_data = _should_parse(map_path)
+    assert map_data is not None
