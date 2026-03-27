@@ -1,5 +1,6 @@
 from sys import argv
 
+from src.features.map.Map import Map
 from src.features.parser import MapData
 
 
@@ -15,11 +16,13 @@ def main() -> None:
 
     try:
         map_data.parsing(filename)
+        map_info: Map = Map(map_data.get_map_data())
 
     except Exception as err:
         print(err)
         return
 
+    print(map_info)
     print(map_data)
     return
 

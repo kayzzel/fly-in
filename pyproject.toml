@@ -23,6 +23,10 @@ line-length = 79
 profile = "black"
 line_length = 79
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

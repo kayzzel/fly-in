@@ -1,6 +1,17 @@
+from typing import TypedDict
+
 from ...utils.types import Color, HubType
 from .connection_data import ConnectionData
 from .hub_data import HubData
+
+
+class MapDataDict(TypedDict):
+
+    drone_nb: int
+    start_hub: HubData | None
+    end_hub: HubData | None
+    hubs: list[HubData]
+    connections: list[ConnectionData]
 
 
 class MapData:
@@ -8,8 +19,8 @@ class MapData:
         self.__drones_nb: int = 0
         self.__start_hub: HubData | None = None
         self.__end_hub: HubData | None = None
-        self.__hubs: list[HubData] = []
-        self.__connections: list[ConnectionData] = []
+        self.__hubs: list[HubData]
+        self.__connections: list[ConnectionData]
 
     def parsing(self, filename: str) -> None:
 
@@ -112,12 +123,16 @@ class MapData:
 
                 self.__connections.append(connection)
 
+            elif line.startswith("nb_drones: "):
+                raise ValueError(
+                    f'"nb_drones" already defined (line {index + 1})\n'
+                    f'"{line}"'
+                )
             # If the line start with none of the expected format
             # then raise an error
             else:
                 raise ValueError(
                     f"Invalide line format: {line} (line {index + 1})\n"
-                    f'"{line}"'
                 )
 
         if not self.__start_hub:
@@ -180,6 +195,9 @@ class MapData:
         zone: HubType = HubType.NORMAL
         color: Color | None = None
         max_drones: int = 1
+
+        if line.startswith("start_hub: "):
+            max_drones = self.__drones_nb
 
         seted_key: list[str] = []
 
@@ -325,3 +343,13 @@ class MapData:
                 value += f"\t{connection}\n"
 
         return value
+
+    def get_map_data(self) -> MapDataDict:
+
+        return {
+            "drone_nb": self.__drones_nb,
+            "start_hub": self.__start_hub,
+            "end_hub": self.__end_hub,
+            "hubs": self.__hubs,
+            "connections": self.__connections,
+        }
