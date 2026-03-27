@@ -1,6 +1,7 @@
 from ..parser.map_data import MapDataDict
 from .Connection import Connection
 from .Hub import Hub
+from .Drone import Drone
 
 
 class Map:
@@ -68,3 +69,7 @@ class Map:
 
         except ValueError as err:
             raise ValueError(err)
+
+        self.__drones: list[Drone] = [
+            Drone(i + 1, self.__start_hub) for i in range(self.__drone_nb)
+        ]

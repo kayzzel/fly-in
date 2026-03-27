@@ -19,8 +19,8 @@ class MapData:
         self.__drones_nb: int = 0
         self.__start_hub: HubData | None = None
         self.__end_hub: HubData | None = None
-        self.__hubs: list[HubData] = []
-        self.__connections: list[ConnectionData] = []
+        self.__hubs: list[HubData]
+        self.__connections: list[ConnectionData]
 
     def parsing(self, filename: str) -> None:
 
@@ -123,12 +123,16 @@ class MapData:
 
                 self.__connections.append(connection)
 
+            elif line.startswith("nb_drones: "):
+                raise ValueError(
+                        f'"nb_drones" already defined (line {index + 1})\n'
+                        f'"{line}"'
+                        )
             # If the line start with none of the expected format
             # then raise an error
             else:
                 raise ValueError(
                     f"Invalide line format: {line} (line {index + 1})\n"
-                    f'"{line}"'
                 )
 
         if not self.__start_hub:
