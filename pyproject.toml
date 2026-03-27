@@ -6,9 +6,9 @@ authors = ["gabach"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-pyqt6 = "^6.10.2"
 
 [tool.poetry.group.dev.dependencies]
+pyqt6 = "^6.10.2"
 flake8 = "^7.0.0"
 mypy = "^1.8.0"
 pytest = "^8.0.0"
