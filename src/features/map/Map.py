@@ -1,7 +1,7 @@
 from ..parser.map_data import MapDataDict
 from .Connection import Connection
-from .Hub import Hub
 from .Drone import Drone
+from .Hub import Hub
 
 
 class Map:

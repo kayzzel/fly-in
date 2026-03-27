@@ -125,9 +125,9 @@ class MapData:
 
             elif line.startswith("nb_drones: "):
                 raise ValueError(
-                        f'"nb_drones" already defined (line {index + 1})\n'
-                        f'"{line}"'
-                        )
+                    f'"nb_drones" already defined (line {index + 1})\n'
+                    f'"{line}"'
+                )
             # If the line start with none of the expected format
             # then raise an error
             else:
