@@ -1,6 +1,6 @@
 # Grid-like map with limited capacity connections
 nb_drones: 5
-start_hub: origin 0 0 [color=green max_drones=3]
+start_hub: origin 0 0 [color=green max_drones=5]
 end_hub: dest 6 6 [color=yellow max_drones=3]
 hub: n1 2 0 [zone=normal]
 hub: n2 4 0 [zone=priority color=blue]

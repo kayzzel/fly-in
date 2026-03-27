@@ -3,16 +3,18 @@ from pathlib import Path
 import pytest
 
 from src.features.parser import MapData
+from src.features.map.Map import Map
 
 # Anchors
 TEST_DIR = Path(__file__).parent  # tests/parser/
 ROOT_DIR = TEST_DIR.parent.parent  # project root
 
 
-def _should_parse(path: Path) -> MapData:
+def _should_parse(path: Path) -> Map:
     map_data = MapData()
     map_data.parsing(str(path))
-    return map_data
+    map_struct: Map = Map(map_data.get_map_data())
+    return map_struct
 
 
 # ── invalid maps ─────────────────────────────────────────────────────────────
@@ -41,7 +43,7 @@ VALID_MAPS = [TEST_DIR / "valid_maps" / f"map_{i}.txt" for i in range(1, 11)]
     "map_path", VALID_MAPS, ids=[f"map_{i}" for i in range(1, 11)]
 )
 def test_valid_map_parses(map_path: Path) -> None:
-    map_data = _should_parse(map_path)
+    map_data: Map = _should_parse(map_path)
     assert map_data is not None
 
 
@@ -67,5 +69,5 @@ SUBJECT_IDS = [p.stem for p in SUBJECT_MAPS]
 
 @pytest.mark.parametrize("map_path", SUBJECT_MAPS, ids=SUBJECT_IDS)
 def test_subject_map_parses(map_path: Path) -> None:
-    map_data = _should_parse(map_path)
+    map_data: Map = _should_parse(map_path)
     assert map_data is not None

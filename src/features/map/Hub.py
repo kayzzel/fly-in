@@ -17,19 +17,11 @@ class Hub:
 
     def __create_hub(self, data: HubData, hubs: list[Hub]) -> None:
 
-        hubs_coord: list[tuple[int, int]] = [(hub.x, hub.y) for hub in hubs]
-
         hubs_names: list[str] = [hub.name for hub in hubs]
 
         if data.name in hubs_names:
             raise ValueError(
                 f'Hub "{data.name}" is already defined in the Hub list'
-            )
-
-        if (data.x, data.y) in hubs_coord:
-            raise ValueError(
-                f'Hub "{data.name}" is on top of another Hub'
-                f"(coord: (x: {data.x}, y: {data.y}))"
             )
 
         if data.hub_type not in HubType._value2member_map_:
