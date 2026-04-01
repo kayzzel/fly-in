@@ -21,6 +21,7 @@ class Drone:
         self.path: list[Hub | None] = []
         self.in_transit_to: Hub | None = None  # for restricted 2-turn moves
         self.delivered: bool = False
+        self.path_step: int = 0
 
     @property
     def is_in_transit(self) -> bool:
@@ -42,7 +43,7 @@ class Drone:
             return None
 
         if self.path[0] is None:
-            self.path.pop(0)
+            self.path_step += 1
             return None
 
         # Second turn of a restricted zone transit: must land
@@ -51,7 +52,7 @@ class Drone:
             self.current_hub = target
             self.in_transit_to = None
             if target is not None and target == self.path[0]:
-                self.path.pop(0)
+                self.path_step += 1
             return f"D{self.drone_id}-{target.name}" if target else None
 
         next_hub = self.path[0]
@@ -62,10 +63,10 @@ class Drone:
             transit_label = f"{self.current_hub.name}_{next_hub.name}"
             self.in_transit_to = next_hub
             self.current_hub = None
-            self.path.pop(0)
+            self.path_step += 1
             return f"D{self.drone_id}-{transit_label}"
 
         # Normal 1-turn move
         self.current_hub = next_hub
-        self.path.pop(0)
+        self.path_step += 1
         return f"D{self.drone_id}-{next_hub.name}"

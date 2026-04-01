@@ -11,7 +11,6 @@ def main() -> None:
         return
 
     filename = argv[1]
-
     map_data: MapData = MapData()
 
     try:
