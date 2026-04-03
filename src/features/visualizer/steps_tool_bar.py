@@ -1,6 +1,10 @@
 from PyQt6.QtWidgets import QToolBar, QWidget, QSizePolicy
 from PyQt6.QtGui import QAction
 from PyQt6.QtCore import QTimer, pyqtSignal
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .map_visu import MainWindow
 
 
 class PlayerToolBar(QToolBar):
@@ -10,7 +14,7 @@ class PlayerToolBar(QToolBar):
     request_restart = pyqtSignal()
     request_tick = pyqtSignal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: "MainWindow") -> None:
         super().__init__("Controls", parent)
 
         self.play_pause_action = QAction("⏵", self)
@@ -23,7 +27,7 @@ class PlayerToolBar(QToolBar):
         self.prev_action.triggered.connect(self.request_prev)
         self.next_action.triggered.connect(self.request_next)
 
-        def make_spacer():
+        def make_spacer() -> QWidget:
             spacer = QWidget()
             spacer.setSizePolicy(
                 QSizePolicy.Policy.Expanding,
@@ -46,11 +50,17 @@ class PlayerToolBar(QToolBar):
         self.timer.setInterval(500)
         self.timer.timeout.connect(self.request_tick)
 
-    def on_play_pause(self):
+    def on_play_pause(self) -> None:
         self.playing = not self.playing
         if self.playing:
-            if self.parent().steps >= self.parent().max_steps:
+            parent = self.parent()
+            if (
+                    parent is not None and hasattr(parent, "steps") and
+                    hasattr(parent, "max_steps") and
+                    parent.steps >= parent.max_steps
+                    ):
                 self.request_restart.emit()
+
             self.play_pause_action.setText("⏸")
             self.timer.start()
         else:
@@ -58,7 +68,7 @@ class PlayerToolBar(QToolBar):
             self.timer.stop()
 
     # Called by MainWindow when max steps is reached
-    def stop(self):
+    def stop(self) -> None:
         self.timer.stop()
         self.playing = False
         self.play_pause_action.setText("⏵")

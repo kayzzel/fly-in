@@ -4,10 +4,11 @@ from PyQt6.QtWidgets import QWidget, QLabel, QVBoxLayout
 from PyQt6.QtCore import Qt
 
 from . steps_tool_bar import PlayerToolBar
+# from . draw_map import MapWidget
 
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self.steps = 0
@@ -33,29 +34,29 @@ class MainWindow(QMainWindow):
         self.player_bar.request_restart.connect(self.on_restart)
         self.player_bar.request_tick.connect(self.on_tick)
 
-    def update_label(self):
+    def update_label(self) -> None:
         self.step_label.setText(f"Step: {self.steps} / {self.max_steps}")
 
-    def on_tick(self):
+    def on_tick(self) -> None:
         if self.steps < self.max_steps:
             self.steps += 1
             self.update_label()
         else:
             self.player_bar.stop()
 
-    def on_next(self):
+    def on_next(self) -> None:
         if self.steps < self.max_steps:
             self.player_bar.stop()
             self.steps += 1
             self.update_label()
 
-    def on_prev(self):
+    def on_prev(self) -> None:
         if self.steps > 0:
             self.player_bar.stop()
             self.steps -= 1
             self.update_label()
 
-    def on_restart(self):
+    def on_restart(self) -> None:
         self.steps = 0
         self.player_bar.stop()
         self.update_label()
