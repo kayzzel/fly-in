@@ -1,10 +1,14 @@
 from PyQt6.QtWidgets import QScrollArea
 from PyQt6.QtCore import Qt, QPoint
 from PyQt6.QtGui import QCursor
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .map_visu import MainWindow
 
 
 class PannableScrollArea(QScrollArea):
-    def __init__(self, parent=None):
+    def __init__(self, parent: "MainWindow") -> None:
         super().__init__(parent)
         self.setHorizontalScrollBarPolicy(
                 Qt.ScrollBarPolicy.ScrollBarAlwaysOff
@@ -13,7 +17,7 @@ class PannableScrollArea(QScrollArea):
         self._drag_start = None
         self._scroll_start = None
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
             self._drag_start = event.globalPosition().toPoint()
             self._scroll_start = QPoint(
@@ -22,7 +26,7 @@ class PannableScrollArea(QScrollArea):
             )
             self.setCursor(QCursor(Qt.CursorShape.ClosedHandCursor))
 
-    def mouseMoveEvent(self, event):
+    def mouseMoveEvent(self, event) -> None:
         if (
                 self._drag_start is not None and
                 hasattr(self._scroll_start, "x") and
@@ -36,7 +40,7 @@ class PannableScrollArea(QScrollArea):
                     self._scroll_start.y() - delta.y()
                     )
 
-    def mouseReleaseEvent(self, event):
+    def mouseReleaseEvent(self, event) -> None:
         self._drag_start = None
         self._scroll_start = None
         self.setCursor(QCursor(Qt.CursorShape.ArrowCursor))

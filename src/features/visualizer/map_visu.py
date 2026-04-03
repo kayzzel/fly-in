@@ -28,7 +28,7 @@ class MainWindow(QMainWindow):
                 canvas_height=self.canvas_size[1]
             )
 
-        scroll = PannableScrollArea()
+        scroll: PannableScrollArea = PannableScrollArea(self)
         scroll.setWidget(self.map_widget)
         scroll.setWidgetResizable(False)  # False = map keeps its fixed size
         scroll.setAlignment(
