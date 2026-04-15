@@ -7,6 +7,12 @@ from ..map.Hub import Hub
 Hubs = list[tuple[str, int, int]]
 
 
+class ExploringDrone:
+    def __init__(self, start_hub: Hub):
+        self.path: list[Hub] = [start_hub]
+        self.actual_hub: Hub = start_hub
+
+
 class Turn:
     """
         Description:
@@ -21,20 +27,30 @@ class Turn:
         self.moves: list[Connection] = []
         self.hubs: Hubs
 
-    def can_drone_move(self, actual_hub: Hub, move: Connection) -> bool:
+    def move_drone(
+                self,
+                drone: ExploringDrone,
+                move: Connection
+            ) -> int:
         """
             Description:
         Look at the turn state to see if the drone can go to a certain hub
-        return True if it can else return Flase
+        Move the drone to the hub if it can and return a int to signal how
+        the move happend
 
             Parammeters:
-        actual_hub -> The hub the drone is currently on
+        drone -> The drone that want to move
         move -> The connection the drone will take to move
 
             Return Value:
-        return a Bool, True if the drone can go to the hub next turn and false
-        if the drone can't
+        return a positive int value:
+        0 -> the drone could move
+        1 -> the drone couldn't move but the node is not blocked
+        2 -> the drone couldn't move and the node is blocked
+        3 -> An error append
         """
+
+        actual_hub: Hub = drone.actual_hub
 
         # Count the number of time this connection is taken in this turn
         connection_count: int = len(
@@ -44,7 +60,7 @@ class Turn:
         # if the number of drones passing by the connection is equal or higher
         # than the max_link_capacity then return False
         if connection_count >= move.max_link_capacity:
-            return False
+            return 1
 
         # Get the next hub from the connection
         next_hub: Hub = move.hub1
@@ -53,24 +69,32 @@ class Turn:
 
         # Test if the actual_hub is part of the Connection, if not return False
         elif move.hub2 != actual_hub:
-            return False
+            return 3
 
         # Test if the next hub can be accessed, if not return False
-        if next_hub.hub_type == HubType.RESTRICTED or next_hub.max_drones == 0:
-            return False
+        if next_hub.hub_type == HubType.BLOCKED or next_hub.max_drones == 0:
+            return 2
 
-        # Get the hub_infos from name
-        hub_info = [hub for hub in self.hubs if hub[0] == next_hub.name]
+        # Get the hub_indexs from name
+        hub_index: list[int] = [
+                i for i in range(len(self.hubs))
+                if self.hubs[i][0] == next_hub.name
+            ]
 
-        # if ther is not hub_info for this one that mean that there is no drone
+        # if there is not hub_index for this one that mean
+        # that there is no drone
         # on it so we can be sure it can be accessed
-        if not hub_info:
-            return True
+        if not hub_index:
+            self.hub.append((next_hub.name, 1, next_hub.max_drones))
+            return 0
 
         # Look if the number of drone in the hub if less than the number
         # of drones if can contain, if so return True
-        if hub_info[0][1] < hub_info[0][2]:
-            return True
+        index: int = hub_index[0]
+
+        if self.hub[index][1] < hub_index[index][2]:
+            self.hub[index][1] += 1
+            return 0
 
         # Return False if none of the case has append
-        return False
+        return 3
