@@ -150,12 +150,11 @@ def get_best_drone(
 
     for index in range(nbr_of_turn):
         prioritary: list[ExploringDrone] = [
-            drone for drone in finished
-            if (
-                hasattr(drone.path[index], "hub_type")
-                and drone.path[index].hub_type == HubType.PRIORITY
-                )
-                ]
+            drone
+            for drone in finished
+            if (hub := drone.path[index]) is not None
+            and hub.hub_type == HubType.PRIORITY
+        ]
 
         if prioritary:
             if len(prioritary) == 1:
