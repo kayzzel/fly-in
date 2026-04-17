@@ -6,11 +6,11 @@ from .Hub import Hub
 
 class Map:
     def __init__(self, data: MapDataDict) -> None:
-        self.__drones_nb: int
-        self.__start_hub: Hub
-        self.__end_hub: Hub
-        self.__hubs: list[Hub] = []
-        self.__connections: list[Connection] = []
+        self.drones_nb: int
+        self.start_hub: Hub
+        self.end_hub: Hub
+        self.hubs: list[Hub] = []
+        self.connections: list[Connection] = []
 
         self.__create_map(data)
 
@@ -23,7 +23,7 @@ class Map:
 
         try:
             for hub_data in data["hubs"]:
-                self.__hubs.append(Hub(hub_data, self.__hubs))
+                self.hubs.append(Hub(hub_data, self.hubs))
 
         except ValueError as err:
             raise ValueError(err)
