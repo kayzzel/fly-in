@@ -4,39 +4,6 @@ from ..map.Hub import Hub
 from .reservation_map import Turn, ExploringDrone, set_drone_in_turns
 
 
-def move_turn(
-            turn: Turn,
-            drones: list[ExploringDrone],
-            drone: ExploringDrone
-          ) -> None:
-    # If drone is in transit to restricted hub, it MUST arrive this turn
-    if drone.in_transit_to_restricted:
-        # Get the last connection (the one leading to restricted hub)
-        last_connection = drone.connections[-1]
-        if not last_connection:
-            return  # Invalid state, drone is lost
-
-        # Try to enter the restricted hub
-        new_drone = turn.move_drone(drone, last_connection)
-
-        if new_drone:
-            drones.append(new_drone)
-        # If move fails, drone is removed (path fails)
-        return
-
-    # Normal movement - try all connections
-    any_moved = False
-    for connection in drone.actual_hub.connections:
-        new_drone = turn.move_drone(drone, connection)
-        if new_drone:
-            drones.append(new_drone)
-            any_moved = True
-
-    # If no moves were possible, keep the drone (stuck, but might move later)
-    if not any_moved:
-        drones.append(drone)
-
-
 def get_best_drone(
         drones: list[ExploringDrone],
         end_hub: Hub
@@ -69,6 +36,45 @@ def get_best_drone(
             finished = prioritary
 
     return finished[0]
+
+
+def move_turn(
+            turn: Turn,
+            drones: list[ExploringDrone],
+            drone: ExploringDrone
+          ) -> None:
+    # If drone is in transit to restricted hub, it MUST arrive this turn
+    if drone.in_transit_to_restricted:
+        # Get the last connection (the one leading to restricted hub)
+        last_connection = drone.connections[-1]
+        if not last_connection:
+            return  # Invalid state, drone is lost
+
+        # Try to enter the restricted hub
+        new_drone = turn.move_drone(drone, last_connection)
+
+        if new_drone:
+            drones.append(new_drone)
+        # If move fails, drone is removed (path fails)
+        return
+
+    # Normal movement - try all connections
+    all_moved = True
+    for connection in drone.actual_hub.connections:
+        new_drone = turn.move_drone(drone, connection)
+        if new_drone:
+            drones.append(new_drone)
+        else:
+            all_moved = False
+
+    # If no moves were possible, keep the drone (stuck, but might move later)
+    if not all_moved:
+        drones.append(ExploringDrone(
+            [*drone.path, None],
+            [*drone.connections, None],
+            drone.actual_hub,
+            drone.in_transit_to_restricted
+        ))
 
 
 def path_find(board: Map, turns: list[Turn]) -> ExploringDrone:

@@ -112,10 +112,10 @@ def set_drone_in_turns(
         turns: list[Turn]
                        ) -> None:
 
-    for index in range(len(drone.connections)):
+    for index in range(len(drone.connections) - 1):
         turn: Turn = turns[index]
-        hub: Hub | None = drone.path[index]
-        connection: Connection | None = drone.connections[index]
+        hub: Hub | None = drone.path[index + 1]
+        connection: Connection | None = drone.connections[index + 1]
 
         if connection:
             turn.moves.append(connection)
