@@ -85,7 +85,7 @@ def path_find(board: Map, turns: list[Turn]) -> ExploringDrone:
 
     while not any(d.actual_hub == board.end_hub for d in active_drones):
         if turn_number >= MAX_TURNS:
-            raise RuntimeError("No path found within turn limit")
+            raise RuntimeError(f"No path found in turn limit max={MAX_TURNS}")
 
         if turn_number >= len(turns):
             turns.append(Turn())
@@ -107,6 +107,28 @@ def path_find(board: Map, turns: list[Turn]) -> ExploringDrone:
 
         active_drones = list(seen.values())
         turn_number += 1
+        # --- DEBUG BLOCK ---
+        print(f"--- Turn {turn_number} Report ---")
+        print(f"Active search heads: {len(active_drones)}")
+
+        # Group drones by their current hub to see where the search is concentrating
+        distribution = {}
+        for d in active_drones:
+            hub_name = d.actual_hub.name
+            distribution[hub_name] = distribution.get(hub_name, 0) + 1
+
+        for hub, count in sorted(distribution.items()):
+            # Find one example drone for this hub to check its path length
+            example = next(d for d in active_drones if d.actual_hub.name == hub)
+            print(f"  Hub: {hub:<15} | Count: {count} | Path Len: {len(example.path)}")
+
+        # Check if we've reached a specific bottleneck
+        if any("gate_hell" in d.actual_hub.name for d in active_drones):
+            print("  Status: Still in the entry bottleneck.")
+        elif any("maze" in d.actual_hub.name for d in active_drones):
+            print("  Status: Currently exploring the Maze of Despair.")
+        # --- END DEBUG BLOCK ---
+        input("waiting...")
 
     best = get_best_drone(active_drones, board.end_hub)
     set_drone_in_turns(best, turns)
@@ -117,6 +139,7 @@ def algo(board: Map) -> None:
     turns: list[Turn] = []
 
     for drone in board.drones:
+        print("FOUND")
         pathfinder: ExploringDrone = path_find(board, turns)
 
         drone.assign_path(pathfinder.path)
