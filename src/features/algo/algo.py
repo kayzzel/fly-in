@@ -54,6 +54,7 @@ def move_turn(
         new_drone = turn.move_drone(drone, last_connection)
 
         if new_drone:
+            # new_drone.connections[-1] = None  # depend on the max_link view
             drones.append(new_drone)
         # If move fails, drone is removed (path fails)
         return
@@ -80,7 +81,7 @@ def move_turn(
 def path_find(board: Map, turns: list[Turn]) -> ExploringDrone:
     active_drones = [ExploringDrone([board.start_hub], [], board.start_hub)]
     turn_number = 0
-    MAX_TURNS = 1000  # Prevent infinite loops
+    MAX_TURNS = 1000
 
     while not any(d.actual_hub == board.end_hub for d in active_drones):
         if turn_number >= MAX_TURNS:
@@ -95,10 +96,16 @@ def path_find(board: Map, turns: list[Turn]) -> ExploringDrone:
         for drone in active_drones:
             move_turn(turn, next_generation, drone)
 
-        if not next_generation:  # All paths failed
+        if not next_generation:
             raise RuntimeError("No valid path exists")
 
-        active_drones = next_generation
+        seen: dict[str, ExploringDrone] = {}
+        for drone in next_generation:
+            key = drone.actual_hub.name
+            if key not in seen or len(drone.path) < len(seen[key].path):
+                seen[key] = drone
+
+        active_drones = list(seen.values())
         turn_number += 1
 
     best = get_best_drone(active_drones, board.end_hub)
