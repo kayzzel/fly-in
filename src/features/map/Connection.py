@@ -49,11 +49,12 @@ class Connection:
                     c
                     for c in connections
                     if (
-                            c.hub1.name == data.hub1 and
-                            c.hub2.name == data.hub2 or
-                            c.hub1.name == data.hub2 and
-                            c.hub2.name == data.hub1
-                        )
+                        (c.hub1.name == data.hub1 and
+                         c.hub2.name == data.hub2)
+                        or
+                        (c.hub1.name == data.hub2 and
+                         c.hub2.name == data.hub1)
+                    )
                 ]
             )
             != 0

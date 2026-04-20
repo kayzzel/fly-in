@@ -48,9 +48,17 @@ class Turn:
         actual_hub: Hub = drone.actual_hub
 
         # Check connection capacity
-        connection_count: int = len(
-            [c for c in self.moves if c == move]
-        )
+        connection_count: int = len([
+                    c
+                    for c in self.moves
+                    if (
+                        (c.hub1.name == move.hub1.name and
+                         c.hub2.name == move.hub2.name)
+                        or
+                        (c.hub1.name == move.hub2.name and
+                         c.hub2.name == move.hub1.name)
+                    )
+                ])
 
         if connection_count >= move.max_link_capacity:
             return None
@@ -112,10 +120,10 @@ def set_drone_in_turns(
         turns: list[Turn]
                        ) -> None:
 
-    for index in range(len(drone.connections) - 1):
+    for index in range(len(drone.path) - 1):
         turn: Turn = turns[index]
         hub: Hub | None = drone.path[index + 1]
-        connection: Connection | None = drone.connections[index + 1]
+        connection: Connection | None = drone.connections[index]
 
         if connection:
             turn.moves.append(connection)
