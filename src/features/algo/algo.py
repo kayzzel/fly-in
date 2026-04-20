@@ -9,19 +9,32 @@ def move_turn(
             drones: list[ExploringDrone],
             drone: ExploringDrone
           ) -> None:
-    all_moved: bool = True
+    # If drone is in transit to restricted hub, it MUST arrive this turn
+    if drone.in_transit_to_restricted:
+        # Get the last connection (the one leading to restricted hub)
+        last_connection = drone.connections[-1]
+        if not last_connection:
+            return  # Invalid state, drone is lost
 
-    for connection in drone.actual_hub.connections:
-        new_drone: ExploringDrone | None = turn.move_drone(drone, connection)
+        # Try to enter the restricted hub
+        new_drone = turn.move_drone(drone, last_connection)
 
-        if not new_drone:
-            all_moved = False
-
-        else:
+        if new_drone:
             drones.append(new_drone)
+        # If move fails, drone is removed (path fails)
+        return
 
-    if all_moved:
-        drones.remove(drone)
+    # Normal movement - try all connections
+    any_moved = False
+    for connection in drone.actual_hub.connections:
+        new_drone = turn.move_drone(drone, connection)
+        if new_drone:
+            drones.append(new_drone)
+            any_moved = True
+
+    # If no moves were possible, keep the drone (stuck, but might move later)
+    if not any_moved:
+        drones.append(drone)
 
 
 def get_best_drone(
@@ -32,6 +45,9 @@ def get_best_drone(
     finished: list[ExploringDrone] = [
             drone for drone in drones if drone.actual_hub is end_hub
             ]
+
+    if not finished:  # Should never happen, but just in case
+        raise ValueError("No drones reached the end hub")
 
     if len(finished) == 1:
         return finished[0]
@@ -55,33 +71,39 @@ def get_best_drone(
     return finished[0]
 
 
-def algo(
-    routes: Map,
-    turns: list[Turn]
-        ) -> ExploringDrone:
+def path_find(routes: Map, turns: list[Turn]) -> ExploringDrone:
+    active_drones = [ExploringDrone([routes.start_hub], [], routes.start_hub)]
+    turn_number = 0
+    MAX_TURNS = 1000  # Prevent infinite loops
 
-    drones: list[ExploringDrone] = [
-                ExploringDrone([routes.start_hub], [], routes.start_hub)
-            ]
+    while not any(d.actual_hub == routes.end_hub for d in active_drones):
+        if turn_number >= MAX_TURNS:
+            raise RuntimeError("No path found within turn limit")
 
-    turn_number: int = 0
+        if turn_number >= len(turns):
+            turns.append(Turn())
 
-    while not [
-        drone for drone in drones if drone.actual_hub == routes.end_hub
-    ]:
-        turn: Turn
+        turn = turns[turn_number]
+        next_generation: list[ExploringDrone] = []
 
-        if len(turns) > turn_number:
-            turn = turns[turn_number]
-        else:
-            turn = Turn()
-            turns.append(turn)
+        for drone in active_drones:
+            move_turn(turn, next_generation, drone)
 
-        for drone in drones:
-            move_turn(turn, drones, drone)
-            turn_number += 1
+        if not next_generation:  # All paths failed
+            raise RuntimeError("No valid path exists")
 
-    best_drone: ExploringDrone = get_best_drone(drones, routes.end_hub)
-    set_drone_in_turns(best_drone, turns)
+        active_drones = next_generation
+        turn_number += 1
 
-    return best_drone
+    best = get_best_drone(active_drones, routes.end_hub)
+    set_drone_in_turns(best, turns)
+    return best
+
+
+def algo(board: Map) -> None:
+    turns: list[Turn] = []
+
+    for drone in board.drones:
+        pathfinder: ExploringDrone = path_find(board, turns)
+
+        drone.assign_path(pathfinder.path)

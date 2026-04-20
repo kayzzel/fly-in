@@ -10,14 +10,15 @@ class ExploringDrone:
             self,
             path: list[Hub | None],
             connections: list[Connection | None],
-            hub: Hub
+            hub: Hub,
+            in_transit_to_restricted: bool = False
                  ):
         self.path: list[Hub | None] = path
         self.connections: list[Connection | None] = connections
         self.actual_hub: Hub = hub
+        self.in_transit_to_restricted: bool = in_transit_to_restricted
 
 
-# Hubs -> list[(name, drone_in, max_capacity)]
 class HubUsage(TypedDict):
     name: str
     drones_in: int
@@ -36,80 +37,73 @@ class Turn:
     """
     def __init__(self) -> None:
         self.moves: list[Connection] = []
-        self.hubs: list[HubUsage]
+        self.hubs: list[HubUsage] = []
 
     def move_drone(
                 self,
                 drone: ExploringDrone,
                 move: Connection
             ) -> ExploringDrone | None:
-        """
-            Description:
-        Look at the turn state to see if the drone can go to a certain hub
-        Move the drone to the hub if it can and return a int to signal how
-        the move happend
-
-            Parammeters:
-        drone -> The drone that want to move
-        move -> The connection the drone will take to move
-
-            Return Value:
-        return an ExploringDrone if it could create one else return None
-        """
 
         actual_hub: Hub = drone.actual_hub
 
-        # Count the number of time this connection is taken in this turn
+        # Check connection capacity
         connection_count: int = len(
-                [connection for connection in self.moves if connection == move]
-            )
+            [c for c in self.moves if c == move]
+        )
 
-        # if the number of drones passing by the connection is equal or higher
-        # than the max_link_capacity then return False
         if connection_count >= move.max_link_capacity:
             return None
 
-        # Get the next hub from the connection
-        next_hub: Hub = move.hub1
+        # Find next hub
         if move.hub1 == actual_hub:
             next_hub = move.hub2
-
-        # Test if the actual_hub is part of the Connection, if not return False
-        elif move.hub2 != actual_hub:
+        elif move.hub2 == actual_hub:
+            next_hub = move.hub1
+        else:
             return None
 
-        # Test if the next hub can be accessed, if not return False
+        # Check if blocked
         if next_hub.hub_type == HubType.BLOCKED or next_hub.max_drones == 0:
             return None
 
-        # Get the hub_indexs from name
+        # === NEW: If going to RESTRICTED hub, start 2-turn journey ===
+        if (next_hub.hub_type == HubType.RESTRICTED and
+                not drone.in_transit_to_restricted):
+            # Turn 1: Start going to restricted hub
+            return ExploringDrone(
+                [*drone.path, None],  # None = in transit
+                [*drone.connections, move],
+                actual_hub,  # Stay at current hub
+                in_transit_to_restricted=True  # Flag: must complete next turn
+            )
+
+        # Normal hub OR completing restricted hub entry (Turn 2)
+        # Check hub capacity
         hub_index: list[int] = [
-                i for i in range(len(self.hubs))
-                if self.hubs[i]["name"] == next_hub.name
-            ]
+            i for i in range(len(self.hubs))
+            if self.hubs[i]["name"] == next_hub.name
+        ]
 
-        # if there is not hub_index for this one that mean
-        # that there is no drone
-        # on it so we can be sure it can be accessed
         if not hub_index:
+            # Hub has space
             return ExploringDrone(
-                        [*drone.path, next_hub],
-                        [*drone.connections, move],
-                        next_hub
-                    )
+                [*drone.path, next_hub],
+                [*drone.connections, move],
+                next_hub,
+                in_transit_to_restricted=False
+            )
 
-        # Look if the number of drone in the hub if less than the number
-        # of drones if can contain, if so return True
         index: int = hub_index[0]
-
         if self.hubs[index]["drones_in"] < self.hubs[index]["max_drones"]:
+            # Hub has space
             return ExploringDrone(
-                        [*drone.path, next_hub],
-                        [*drone.connections, move],
-                        next_hub
-                    )
+                [*drone.path, next_hub],
+                [*drone.connections, move],
+                next_hub,
+                in_transit_to_restricted=False
+            )
 
-        # Return False if none of the case has append
         return None
 
 
@@ -131,7 +125,7 @@ def set_drone_in_turns(
 
         hub_index: list[int] = [
                 i for i in range(len(turn.hubs))
-                if turn.hubs[i]["name"] == hub
+                if turn.hubs[i]["name"] == hub.name
             ]
 
         if not hub_index:
