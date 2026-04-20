@@ -73,6 +73,7 @@ class Connection:
             )
         self.hub1 = hub1[0]
         self.hub2 = hub2[0]
+        self.max_link_capacity = data.max_link_capacity
 
         self.hub1.connections.append(self)
         self.hub2.connections.append(self)

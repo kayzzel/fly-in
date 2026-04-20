@@ -16,10 +16,10 @@ class Map:
 
     def __create_map(self, data: MapDataDict) -> None:
 
-        if not isinstance(data["drone_nb"], int) or data["drone_nb"] <= 0:
-            raise ValueError('The "drone_nb" must be an int superior as 0')
+        if not isinstance(data["drones_nb"], int) or data["drones_nb"] <= 0:
+            raise ValueError('The "drones_nb" must be an int superior as 0')
 
-        self.drone_nb = data["drone_nb"]
+        self.drones_nb = data["drones_nb"]
 
         try:
             for hub_data in data["hubs"]:
@@ -34,10 +34,10 @@ class Map:
 
             self.start_hub = Hub(data["start_hub"], self.hubs)
 
-            if self.start_hub.max_drones < self.drone_nb:
+            if self.start_hub.max_drones < self.drones_nb:
                 raise ValueError(
                     'The "max_drones" of the "start_hub"'
-                    'must be at least the same as the "drone_nb"'
+                    'must be at least the same as the "drones_nb"'
                 )
 
         except ValueError as err:
@@ -63,7 +63,9 @@ class Map:
             for connection_data in data["connections"]:
                 self.connections.append(
                     Connection(
-                        connection_data, self.hubs, self.connections
+                        connection_data,
+                        [*self.hubs, self.start_hub, self.end_hub],
+                        self.connections
                     )
                 )
 
@@ -71,5 +73,5 @@ class Map:
             raise ValueError(err)
 
         self.drones: list[Drone] = [
-            Drone(i + 1, self.start_hub) for i in range(self.drone_nb)
+            Drone(i + 1, self.start_hub) for i in range(self.drones_nb)
         ]

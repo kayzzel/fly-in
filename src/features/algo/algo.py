@@ -71,12 +71,12 @@ def get_best_drone(
     return finished[0]
 
 
-def path_find(routes: Map, turns: list[Turn]) -> ExploringDrone:
-    active_drones = [ExploringDrone([routes.start_hub], [], routes.start_hub)]
+def path_find(board: Map, turns: list[Turn]) -> ExploringDrone:
+    active_drones = [ExploringDrone([board.start_hub], [], board.start_hub)]
     turn_number = 0
     MAX_TURNS = 1000  # Prevent infinite loops
 
-    while not any(d.actual_hub == routes.end_hub for d in active_drones):
+    while not any(d.actual_hub == board.end_hub for d in active_drones):
         if turn_number >= MAX_TURNS:
             raise RuntimeError("No path found within turn limit")
 
@@ -95,7 +95,7 @@ def path_find(routes: Map, turns: list[Turn]) -> ExploringDrone:
         active_drones = next_generation
         turn_number += 1
 
-    best = get_best_drone(active_drones, routes.end_hub)
+    best = get_best_drone(active_drones, board.end_hub)
     set_drone_in_turns(best, turns)
     return best
 
