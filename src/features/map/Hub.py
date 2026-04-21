@@ -1,4 +1,8 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .Connection import Connection
 
 from ...utils.types import Color, HubType
 from ..parser.hub_data import HubData
@@ -12,6 +16,7 @@ class Hub:
         self.hub_type: HubType
         self.color: Color | None
         self.max_drones: int
+        self.connections: list["Connection"] = []
 
         self.__create_hub(data, hubs)
 

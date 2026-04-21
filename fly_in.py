@@ -2,6 +2,7 @@ from sys import argv
 
 from src.features.map.Map import Map
 from src.features.parser import MapData
+from src.features.algo.algo import algo
 
 
 def main() -> None:
@@ -16,6 +17,7 @@ def main() -> None:
     try:
         map_data.parsing(filename)
         map_info: Map = Map(map_data.get_map_data())
+        algo(map_info)
 
     except Exception as err:
         print(err)
@@ -23,6 +25,8 @@ def main() -> None:
 
     print(map_info)
     print(map_data)
+    for drone in map_info.drones:
+        print(len(["None" if not hub else hub.name for hub in drone.path]))
     return
 
 

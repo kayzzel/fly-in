@@ -7,7 +7,7 @@ from .hub_data import HubData
 
 class MapDataDict(TypedDict):
 
-    drone_nb: int
+    drones_nb: int
     start_hub: HubData | None
     end_hub: HubData | None
     hubs: list[HubData]
@@ -347,7 +347,7 @@ class MapData:
     def get_map_data(self) -> MapDataDict:
 
         return {
-            "drone_nb": self.__drones_nb,
+            "drones_nb": self.__drones_nb,
             "start_hub": self.__start_hub,
             "end_hub": self.__end_hub,
             "hubs": self.__hubs,

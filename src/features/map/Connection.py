@@ -15,6 +15,8 @@ class Connection:
         self.hub2: Hub
         self.max_link_capacity: int
 
+        self.__create_connection(data, hubs, connections)
+
     def __create_connection(
         self,
         data: ConnectionData,
@@ -33,12 +35,12 @@ class Connection:
 
         if len(hub1) != 1:
             raise ValueError(
-                '"{data.hub1}" is not defined as a hub in the map'
+                f'"{data.hub1}" is not defined as a hub in the map'
             )
 
         if len(hub2) != 1:
             raise ValueError(
-                '"{data.hub2}" is not defined as a hub in the map'
+                f'"{data.hub2}" is not defined as a hub in the map'
             )
 
         if (
@@ -46,7 +48,13 @@ class Connection:
                 [
                     c
                     for c in connections
-                    if c.hub1.name == data.hub1 and c.hub2.name == data.hub2
+                    if (
+                        (c.hub1.name == data.hub1 and
+                         c.hub2.name == data.hub2)
+                        or
+                        (c.hub1.name == data.hub2 and
+                         c.hub2.name == data.hub1)
+                    )
                 ]
             )
             != 0
@@ -64,3 +72,9 @@ class Connection:
                 "The number of drones must be a positive int "
                 f"(max drones: {data.max_link_capacity})"
             )
+        self.hub1 = hub1[0]
+        self.hub2 = hub2[0]
+        self.max_link_capacity = data.max_link_capacity
+
+        self.hub1.connections.append(self)
+        self.hub2.connections.append(self)

@@ -6,24 +6,24 @@ from .Hub import Hub
 
 class Map:
     def __init__(self, data: MapDataDict) -> None:
-        self.__drones_nb: int
-        self.__start_hub: Hub
-        self.__end_hub: Hub
-        self.__hubs: list[Hub] = []
-        self.__connections: list[Connection] = []
+        self.drones_nb: int
+        self.start_hub: Hub
+        self.end_hub: Hub
+        self.hubs: list[Hub] = []
+        self.connections: list[Connection] = []
 
         self.__create_map(data)
 
     def __create_map(self, data: MapDataDict) -> None:
 
-        if not isinstance(data["drone_nb"], int) or data["drone_nb"] <= 0:
-            raise ValueError('The "drone_nb" must be an int superior as 0')
+        if not isinstance(data["drones_nb"], int) or data["drones_nb"] <= 0:
+            raise ValueError('The "drones_nb" must be an int superior as 0')
 
-        self.__drone_nb = data["drone_nb"]
+        self.drones_nb = data["drones_nb"]
 
         try:
             for hub_data in data["hubs"]:
-                self.__hubs.append(Hub(hub_data, self.__hubs))
+                self.hubs.append(Hub(hub_data, self.hubs))
 
         except ValueError as err:
             raise ValueError(err)
@@ -32,12 +32,12 @@ class Map:
             if not data["start_hub"]:
                 raise ValueError("Not start_hub provided")
 
-            self.__start_hub = Hub(data["start_hub"], self.__hubs)
+            self.start_hub = Hub(data["start_hub"], self.hubs)
 
-            if self.__start_hub.max_drones < self.__drone_nb:
+            if self.start_hub.max_drones < self.drones_nb:
                 raise ValueError(
                     'The "max_drones" of the "start_hub"'
-                    'must be at least the same as the "drone_nb"'
+                    'must be at least the same as the "drones_nb"'
                 )
 
         except ValueError as err:
@@ -47,11 +47,11 @@ class Map:
             if not data["end_hub"]:
                 raise ValueError("Not end_hub provided")
 
-            self.__end_hub = Hub(
-                data["end_hub"], self.__hubs + [self.__start_hub]
+            self.end_hub = Hub(
+                data["end_hub"], self.hubs + [self.start_hub]
             )
 
-            if self.__end_hub.max_drones < 1:
+            if self.end_hub.max_drones < 1:
                 raise ValueError(
                     'The "max_drones" of the "start_hub"' "must be at least 1"
                 )
@@ -61,15 +61,17 @@ class Map:
 
         try:
             for connection_data in data["connections"]:
-                self.__connections.append(
+                self.connections.append(
                     Connection(
-                        connection_data, self.__hubs, self.__connections
+                        connection_data,
+                        [*self.hubs, self.start_hub, self.end_hub],
+                        self.connections
                     )
                 )
 
         except ValueError as err:
             raise ValueError(err)
 
-        self.__drones: list[Drone] = [
-            Drone(i + 1, self.__start_hub) for i in range(self.__drone_nb)
+        self.drones: list[Drone] = [
+            Drone(i + 1, self.start_hub) for i in range(self.drones_nb)
         ]
