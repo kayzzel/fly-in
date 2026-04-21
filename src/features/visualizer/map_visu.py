@@ -1,6 +1,5 @@
-import sys
 from PyQt6.QtWidgets import (
-    QApplication, QMainWindow, QLabel,
+    QMainWindow, QLabel,
     QVBoxLayout, QWidget
 )
 from PyQt6.QtCore import Qt
@@ -8,13 +7,15 @@ from PyQt6.QtCore import Qt
 from .steps_tool_bar import PlayerToolBar
 from .draw_map import MapWidget
 from .pannable_scroll_area import PannableScrollArea
+from ..map.Map import Map
 
 
 class MainWindow(QMainWindow):
-    def __init__(self) -> None:
+    def __init__(self, drone_map: Map) -> None:
         super().__init__()
-        self.steps = 0
-        self.max_steps = 10
+        self.drone_map: Map = drone_map
+        self.steps: int = 0
+        self.max_steps: int = 100
         self.canvas_size = (1600, 1600)
 
         # --- set window sizes ---
@@ -27,6 +28,7 @@ class MainWindow(QMainWindow):
                 canvas_width=self.canvas_size[0],
                 canvas_height=self.canvas_size[1]
             )
+        self.map_widget.draw_map(self.drone_map)
 
         scroll: PannableScrollArea = PannableScrollArea(self)
         scroll.setWidget(self.map_widget)
@@ -85,9 +87,3 @@ class MainWindow(QMainWindow):
         self.steps = 0
         self.player_bar.stop()
         self.update_label()
-
-
-app = QApplication(sys.argv)
-window = MainWindow()
-window.show()
-app.exec()

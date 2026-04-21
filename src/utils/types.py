@@ -122,6 +122,7 @@ class Color(str, Enum):
     POWDERBLUE = "powderblue"
     PURPLE = "purple"
     RED = "red"
+    RAINBOW = "rainbow"
     ROSYBROWN = "rosybrown"
     ROYALBLUE = "royalblue"
     SADDLEBROWN = "saddlebrown"

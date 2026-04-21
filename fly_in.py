@@ -1,8 +1,10 @@
 from sys import argv
+from PyQt6.QtWidgets import QApplication
 
 from src.features.map.Map import Map
 from src.features.parser import MapData
 from src.features.algo.algo import algo
+from src.features.visualizer.map_visu import MainWindow
 
 
 def main() -> None:
@@ -25,9 +27,11 @@ def main() -> None:
 
     print(map_info)
     print(map_data)
-    for drone in map_info.drones:
-        print(len(["None" if not hub else hub.name for hub in drone.path]))
-    return
+
+    app = QApplication([])
+    window = MainWindow(map_info)
+    window.show()
+    app.exec()
 
 
 if __name__ == "__main__":
