@@ -25,9 +25,6 @@ def main() -> None:
         print(err)
         return
 
-    print(map_info)
-    print(map_data)
-
     app = QApplication([])
     window = MainWindow(map_info)
     window.show()
