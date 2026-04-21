@@ -17,10 +17,10 @@ class Drone:
     def __init__(self, drone_id: int, start_hub: Hub) -> None:
         """Initialize a drone at the start hub."""
         self.drone_id: int = drone_id
-        self.current_hub: Hub | None = start_hub
         self.path: list[Hub | None] = []
         self.in_transit_to: Hub | None = None  # for restricted 2-turn moves
         self.delivered: bool = False
+        self.current_hub: Hub | None = start_hub
         self.path_step: int = 0
 
     @property

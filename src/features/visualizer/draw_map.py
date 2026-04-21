@@ -9,8 +9,8 @@ from PyQt6.QtGui import (
 from PyQt6.QtCore import Qt, QPoint
 
 if TYPE_CHECKING:
-    from ..models.Map import Map  # type: ignore[import-untyped]
-    from ..models.Hub import Hub  # type: ignore[import-untyped]
+    from ..models.Map import Map
+    from ..models.Hub import Hub
 
 
 class MapWidget(QWidget):

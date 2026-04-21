@@ -27,6 +27,13 @@ line_length = 79
 testpaths = ["tests"]
 pythonpath = ["."]
 
+[[tool.mypy.overrides]]
+module = [
+    "src.features.models.Map",
+    "src.features.models.Hub"
+]
+ignore_missing_imports = true
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
