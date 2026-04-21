@@ -27,7 +27,7 @@ def main() -> None:
     print(map_info)
     print(map_data)
     for drone in map_info.drones:
-        print(["None" if not hub else hub.name for hub in drone.path])
+        print(len(["None" if not hub else hub.name for hub in drone.path]))
     return
 
 

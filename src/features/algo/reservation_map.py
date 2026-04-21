@@ -71,6 +71,9 @@ class Turn:
         else:
             return None
 
+        if next_hub in drone.path:
+            return None
+
         # Check if blocked
         if next_hub.hub_type == HubType.BLOCKED or next_hub.max_drones == 0:
             return None
