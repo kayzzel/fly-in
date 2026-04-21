@@ -115,9 +115,10 @@ def path_find(board: Map, turns: list[Turn]) -> ExploringDrone:
 
 def algo(board: Map) -> None:
     turns: list[Turn] = []
+    paths: list[list[Hub | None]] = []
 
-    for drone in board.drones:
-        print("FOUND")
+    for _ in range(board.drones_nb):
         pathfinder: ExploringDrone = path_find(board, turns)
+        paths.append(pathfinder.path)
 
-        drone.assign_path(pathfinder.path)
+    board.set_drones_steps(paths)

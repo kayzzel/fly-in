@@ -11,6 +11,7 @@ class Map:
         self.end_hub: Hub
         self.hubs: list[Hub] = []
         self.connections: list[Connection] = []
+        self.max_steps: int = 0
 
         self.__create_map(data)
 
@@ -75,3 +76,10 @@ class Map:
         self.drones: list[Drone] = [
             Drone(i + 1, self.start_hub) for i in range(self.drones_nb)
         ]
+
+    def set_drones_steps(self, paths: list[list[Hub | None]]) -> None:
+        self.max_steps = 0
+        for index in range(len(paths)):
+            self.drones[index].assign_path(paths[index])
+            if self.max_steps < len(paths[index]):
+                self.max_steps = len(paths[index])

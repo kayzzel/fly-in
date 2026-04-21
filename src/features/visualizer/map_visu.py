@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
     QMainWindow, QLabel,
-    QVBoxLayout, QWidget
+    QVBoxLayout, QWidget, QMessageBox
 )
 from PyQt6.QtCore import Qt
 
@@ -8,14 +8,17 @@ from .steps_tool_bar import PlayerToolBar
 from .draw_map import MapWidget
 from .pannable_scroll_area import PannableScrollArea
 from ..map.Map import Map
+from ..parser.map_data import MapData
+from ..algo.algo import algo
 
 
 class MainWindow(QMainWindow):
     def __init__(self, drone_map: Map) -> None:
         super().__init__()
         self.drone_map: Map = drone_map
-        self.steps: int = 0
-        self.max_steps: int = 100
+        algo(drone_map)
+        self.steps = 0
+        self.max_steps = drone_map.max_steps
         self.canvas_size = (1600, 1600)
 
         # --- set window sizes ---
@@ -59,6 +62,7 @@ class MainWindow(QMainWindow):
         self.player_bar.request_prev.connect(self.on_prev)
         self.player_bar.request_restart.connect(self.on_restart)
         self.player_bar.request_tick.connect(self.on_tick)
+        self.player_bar.request_map_load.connect(self.load_new_map)
 
     # ... rest of your slots unchanged
     def update_label(self) -> None:
@@ -87,3 +91,32 @@ class MainWindow(QMainWindow):
         self.steps = 0
         self.player_bar.stop()
         self.update_label()
+
+    def load_new_map(self, file_path: str) -> None:
+        """Logic to parse the new file and update the MapWidget."""
+        try:
+            self.player_bar.stop()
+
+            # 1. Parse your new map (assuming you have a parser)
+            map_data: MapData = MapData()
+            map_data.parsing(file_path)
+            new_map: Map = Map(map_data.get_map_data())
+            algo(new_map)
+
+            # 2. Reset visualizer states
+            self.steps = 0
+            self.max_steps = new_map.max_steps
+
+            # 3. Tell the widget to draw the new map
+            self.drone_map = new_map
+            self.map_widget.draw_map(new_map)
+
+            self.player_bar.request_restart.emit()
+        except Exception as e:
+            error_dialog = QMessageBox(self)
+            error_dialog.setIcon(QMessageBox.Icon.Critical)
+            error_dialog.setWindowTitle("Map Loading Error")
+            error_dialog.setText("Could not load the selected map file.")
+            error_dialog.setInformativeText(str(e))
+            error_dialog.setStandardButtons(QMessageBox.StandardButton.Ok)
+            error_dialog.exec()
