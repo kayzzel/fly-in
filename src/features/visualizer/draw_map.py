@@ -162,7 +162,10 @@ class MapWidget(QWidget):
         self, painter: QPainter, map_obj: Map, current_step: int,
         tr: Callable[[float, float], QPoint]
     ) -> None:
-        """Draw the path trails for each drone up to current step"""
+        """Draw the path trails for each drone up to current step
+
+        Shows trails including midpoints for restricted zone entries
+        """
         for drone in map_obj.drones:
             if not drone.path or current_step == 0:
                 continue
@@ -171,13 +174,33 @@ class MapWidget(QWidget):
             path_points = []
 
             # Start position
-            path_points.append(tr(map_obj.start_hub.x, map_obj.start_hub.y))
+            current_hub = map_obj.start_hub
+            path_points.append(tr(current_hub.x, current_hub.y))
 
             # Add each position up to current step
             for i in range(min(current_step, len(drone.path))):
                 hub = drone.path[i]
-                if hub is not None:  # Skip None (waiting turns)
+
+                # Check if this is a restricted zone entry
+                next_hub = None
+
+                if i + 1 < len(drone.path):
+                    next_hub = drone.path[i + 1]
+
+                if (
+                        hub is None and next_hub and
+                        next_hub is not None and
+                        next_hub.hub_type.value == "restricted"
+                        ):
+
+                    # Add midpoint for in-transit state
+                    mid_x = (current_hub.x + next_hub.x) / 2.0
+                    mid_y = (current_hub.y + next_hub.y) / 2.0
+                    path_points.append(tr(mid_x, mid_y))
+
+                elif hub is not None:
                     path_points.append(tr(hub.x, hub.y))
+                    current_hub = hub
 
             # Draw the trail
             if len(path_points) > 1:
@@ -186,7 +209,7 @@ class MapWidget(QWidget):
                 painter.setPen(
                         QPen(drone_color, max(1, int(2 * self.zoom_level)),
                              Qt.PenStyle.DashLine)
-                        )
+                    )
 
                 for i in range(len(path_points) - 1):
                     painter.drawLine(path_points[i], path_points[i + 1])
@@ -199,7 +222,7 @@ class MapWidget(QWidget):
         for drone in map_obj.drones:
             pos = self._get_drone_position_at_step(
                     drone, map_obj, current_step
-                    )
+                )
             if pos:
                 screen_pos = tr(pos[0], pos[1])
                 self._draw_drone_at(painter, drone, screen_pos)
@@ -207,7 +230,12 @@ class MapWidget(QWidget):
     def _get_drone_position_at_step(
         self, drone: Drone, map_obj: Map, step: int
     ) -> tuple[float, float] | None:
-        """Calculate drone position at a given step"""
+        """Calculate drone position at a given step
+
+        Returns:
+            (x, y) position, or None if drone doesn't exist at this step
+            For restricted zones: returns midpoint of connection on first turn
+        """
         if step == 0:
             # All drones start at start_hub
             return (map_obj.start_hub.x, map_obj.start_hub.y)
@@ -226,10 +254,31 @@ class MapWidget(QWidget):
 
         # Find position at this step
         current_hub = map_obj.start_hub
+
         for i in range(step):
             if i >= len(drone.path):
                 break
+
             hub = drone.path[i]
+
+            # Check if this is the first turn of a restricted zone entry
+            # Path has None followed by the restricted hub
+            next_hub = None
+
+            if i + 1 < len(drone.path):
+                next_hub = drone.path[i + 1]
+
+            if (
+                    hub is None and next_hub and
+                    next_hub is not None and
+                    next_hub.hub_type.value == "restricted"
+                    ):
+
+                # Drone is in transit - show midway on connection
+                mid_x = (current_hub.x + next_hub.x) / 2.0
+                mid_y = (current_hub.y + next_hub.y) / 2.0
+                return (mid_x, mid_y)
+
             if hub is not None:
                 current_hub = hub
 

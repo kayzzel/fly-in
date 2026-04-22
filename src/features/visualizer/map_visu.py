@@ -8,8 +8,8 @@ from .steps_tool_bar import PlayerToolBar
 from .draw_map import MapWidget
 from .pannable_scroll_area import PannableScrollArea
 from ..map.Map import Map
-from ..map.Drone import Drone
 from ..map.Hub import Hub
+from ..map.Drone import Drone
 from ..parser.map_data import MapData
 from ..algo.algo import algo
 
@@ -90,20 +90,80 @@ class MainWindow(QMainWindow):
 
         # Count drones at each location
         locations: dict[str, list[int]] = {}
+        in_transit: list[tuple[int, str, str]] = []
+
         for drone in self.drone_map.drones:
-            pos = self._get_drone_current_hub(drone)
-            if pos:
-                hub_name = pos.name
-                if hub_name not in locations:
-                    locations[hub_name] = []
-                locations[hub_name].append(drone.drone_id)
+            # Check if drone is in transit to restricted zone
+            transit_info = self._get_drone_transit_status(drone)
+            if transit_info:
+                in_transit.append((
+                    drone.drone_id,
+                    transit_info[0],
+                    transit_info[1]
+                ))
+            else:
+                pos = self._get_drone_current_hub(drone)
+                if pos:
+                    hub_name = pos.name
+                    if hub_name not in locations:
+                        locations[hub_name] = []
+                    locations[hub_name].append(drone.drone_id)
 
         # Display locations
         for hub_name, drone_ids in sorted(locations.items()):
             drone_list = ", ".join(f"D{did}" for did in sorted(drone_ids))
             info_lines.append(f"{hub_name}: {drone_list}")
 
+        # Display in-transit drones
+        if in_transit:
+            info_lines.append("")
+            info_lines.append("In Transit:")
+            for drone_id, from_hub, to_hub in sorted(in_transit):
+                info_lines.append(f"  D{drone_id}: {from_hub} → {to_hub}")
+
         return "\n".join(info_lines)
+
+    def _get_drone_transit_status(
+                self,
+                drone: Drone
+           ) -> tuple[str, str] | None:
+        """Check if drone is in transit to a restricted zone
+
+        Returns:
+            (from_hub_name, to_hub_name) if in transit, else None
+        """
+        if self.steps == 0 or self.steps > len(drone.path):
+            return None
+
+        # Track current hub
+        current_hub = self.drone_map.start_hub
+
+        for i in range(self.steps):
+            if i >= len(drone.path):
+                break
+
+            hub = drone.path[i]
+
+            # Check if this step is the in-transit state
+            if i == self.steps - 1:  # Current step
+                next_hub = None
+
+                if i + 1 < len(drone.path):
+                    next_hub = drone.path[i + 1]
+
+                if (
+                        hub is None and next_hub and
+                        next_hub is not None and
+                        next_hub.hub_type.value == "restricted"
+                        ):
+
+                    # This is the in-transit step
+                    return (current_hub.name, next_hub.name)
+
+            if hub is not None:
+                current_hub = hub
+
+        return None
 
     def _get_drone_current_hub(self, drone: Drone) -> Hub | None:
         """Get the hub where a drone is at the current step"""
