@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import (
-    QMainWindow, QLabel,
+    QMainWindow, QLabel, QScrollArea,
     QVBoxLayout, QWidget, QMessageBox
 )
 from PyQt6.QtCore import Qt
@@ -19,7 +19,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.drone_map: Map = drone_map
         algo(drone_map)
-        self.steps = 0
+        self.steps = 1
         self.max_steps = drone_map.max_steps
         self.canvas_size = (1600, 1600)
 
@@ -49,7 +49,9 @@ class MainWindow(QMainWindow):
         wrapper_layout.setContentsMargins(0, 0, 0, 0)
         wrapper_layout.addWidget(scroll)
 
-        self.step_label = QLabel(f"Step: {self.steps} / {self.max_steps}")
+        self.step_label = QLabel(
+                f"Step: {self.steps - 1} / {self.max_steps - 1}"
+            )
         self.step_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.step_label.setStyleSheet(
             "font-size: 24px; background: rgba(255,255,255,180); "
@@ -57,15 +59,28 @@ class MainWindow(QMainWindow):
         )
         wrapper_layout.addWidget(self.step_label)
 
-        # Add drone info panel
         self.info_label = QLabel(self._get_drone_info())
-        self.info_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.info_label.setAlignment(
+                Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft
+                )
         self.info_label.setStyleSheet(
-            "font-size: 12px; background: rgba(255,255,255,200); "
-            "padding: 10px; border-radius: 5px;"
+            "font-size: 12px; background: transparent; padding: 5px;"
         )
-        self.info_label.setMaximumHeight(150)
-        wrapper_layout.addWidget(self.info_label)
+        # This is crucial: allows the label to expand to fit all text
+        self.info_label.setWordWrap(True)
+
+        # 2. Create a Scroll Area to act as the container
+        info_scroll = QScrollArea()
+        info_scroll.setWidget(self.info_label)
+        info_scroll.setWidgetResizable(True)
+        info_scroll.setMaximumHeight(150)
+        info_scroll.setStyleSheet(
+            "background: rgba(255,255,255,200); "
+            "border-radius: 5px; border: 1px solid #ccc;"
+        )
+
+        # 3. Add the SCROLL AREA to your layout, not the label
+        wrapper_layout.addWidget(info_scroll)
 
         self.setCentralWidget(wrapper)
 
@@ -190,7 +205,9 @@ class MainWindow(QMainWindow):
 
     def update_display(self) -> None:
         """Update both the label and the map visualization"""
-        self.step_label.setText(f"Step: {self.steps} / {self.max_steps}")
+        self.step_label.setText(
+                f"Step: {self.steps - 1} / {self.max_steps - 1}"
+            )
         self.info_label.setText(self._get_drone_info())
         self.map_widget.set_step(self.steps)
 
@@ -208,13 +225,13 @@ class MainWindow(QMainWindow):
             self.update_display()
 
     def on_prev(self) -> None:
-        if self.steps > 0:
+        if self.steps > 1:
             self.player_bar.stop()
             self.steps -= 1
             self.update_display()
 
     def on_restart(self) -> None:
-        self.steps = 0
+        self.steps = 1
         self.player_bar.stop()
         self.update_display()
 
@@ -230,7 +247,7 @@ class MainWindow(QMainWindow):
             algo(new_map)
 
             # 2. Reset visualizer states
-            self.steps = 0
+            self.steps = 1
             self.max_steps = new_map.max_steps
 
             # 3. Tell the widget to draw the new map

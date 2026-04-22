@@ -80,7 +80,23 @@ class Map:
     def set_drones_steps(self, paths: list[list[Hub | None]]) -> None:
         self.max_steps = 0
         for index in range(len(paths)):
-            self.drones[index].assign_path(paths[index][1:])
+            self.drones[index].assign_path(paths[index])
             if self.max_steps < len(paths[index]):
                 self.max_steps = len(paths[index])
-        self.max_steps -= 1
+
+    def print_algo(self) -> None:
+        for i in range(1, self.max_steps):
+            first: bool = True
+            for drone in self.drones:
+                move: str | None = drone.get_move_at_step(i)
+                if not move:
+                    continue
+
+                if first:
+                    first = False
+                    print(move, end="")
+
+                else:
+                    print(" " + move, end="")
+
+            print()

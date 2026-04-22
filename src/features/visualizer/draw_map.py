@@ -260,7 +260,6 @@ class MapWidget(QWidget):
                 break
 
             hub = drone.path[i]
-
             # Check if this is the first turn of a restricted zone entry
             # Path has None followed by the restricted hub
             next_hub = None
@@ -271,7 +270,8 @@ class MapWidget(QWidget):
             if (
                     hub is None and next_hub and
                     next_hub is not None and
-                    next_hub.hub_type.value == "restricted"
+                    next_hub.hub_type.value == "restricted" and
+                    i == step - 1
                     ):
 
                 # Drone is in transit - show midway on connection
