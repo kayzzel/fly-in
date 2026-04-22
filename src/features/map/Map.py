@@ -80,6 +80,7 @@ class Map:
     def set_drones_steps(self, paths: list[list[Hub | None]]) -> None:
         self.max_steps = 0
         for index in range(len(paths)):
-            self.drones[index].assign_path(paths[index])
+            self.drones[index].assign_path(paths[index][1:])
             if self.max_steps < len(paths[index]):
                 self.max_steps = len(paths[index])
+        self.max_steps -= 1

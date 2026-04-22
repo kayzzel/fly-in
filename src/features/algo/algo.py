@@ -82,6 +82,7 @@ def path_find(board: Map, turns: list[Turn]) -> ExploringDrone:
     active_drones = [ExploringDrone([board.start_hub], [], board.start_hub)]
     turn_number = 0
     MAX_TURNS = 1000
+    MAX_DRONES_PER_HUB = 3  # ✅ Keep top 3 paths per hub
 
     while not any(d.actual_hub == board.end_hub for d in active_drones):
         if turn_number >= MAX_TURNS:
@@ -99,13 +100,21 @@ def path_find(board: Map, turns: list[Turn]) -> ExploringDrone:
         if not next_generation:
             raise RuntimeError("No valid path exists")
 
-        seen: dict[str, ExploringDrone] = {}
+        # ✅ Keep multiple drones per hub
+        by_hub: dict[str, list[ExploringDrone]] = {}
         for drone in next_generation:
             key = drone.actual_hub.name
-            if key not in seen or len(drone.path) < len(seen[key].path):
-                seen[key] = drone
+            if key not in by_hub:
+                by_hub[key] = []
+            by_hub[key].append(drone)
 
-        active_drones = list(seen.values())
+        # Keep best N paths per hub
+        active_drones = []
+        for hub_name, drones in by_hub.items():
+            # Sort by path length, keep top N
+            sorted_drones = sorted(drones, key=lambda d: len(d.path))
+            active_drones.extend(sorted_drones[:MAX_DRONES_PER_HUB])
+
         turn_number += 1
 
     best = get_best_drone(active_drones, board.end_hub)

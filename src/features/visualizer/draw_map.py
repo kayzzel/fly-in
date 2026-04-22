@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 from PyQt6.QtWidgets import QWidget, QLabel, QVBoxLayout
 from PyQt6.QtGui import (
@@ -9,8 +9,9 @@ from PyQt6.QtGui import (
 from PyQt6.QtCore import Qt, QPoint
 
 if TYPE_CHECKING:
-    from ..models.Map import Map
-    from ..models.Hub import Hub
+    from ..map.Map import Map
+    from ..map.Hub import Hub
+    from ..map.Drone import Drone
 
 
 class MapWidget(QWidget):
@@ -18,7 +19,7 @@ class MapWidget(QWidget):
         self,
         canvas_width: int = 1600,
         canvas_height: int = 1600,
-        padding: int = 100  # Increased base padding for edge labels
+        padding: int = 100
     ) -> None:
         super().__init__()
         self.base_width: int = canvas_width
@@ -27,6 +28,7 @@ class MapWidget(QWidget):
         self.base_padding: int = padding
 
         self._last_map_obj: Map | None = None
+        self._current_step: int = 0  # Track current visualization step
 
         self.label: QLabel = QLabel()
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -44,7 +46,6 @@ class MapWidget(QWidget):
 
     def update_zoom(self, step: float) -> None:
         new_zoom: float = self.zoom_level * step
-        # Allow deeper zoom to spread hubs more
         self.zoom_level = max(0.5, min(new_zoom, 15.0))
 
         new_w: int = int(self.base_width * self.zoom_level)
@@ -54,13 +55,17 @@ class MapWidget(QWidget):
         self.setFixedSize(new_w, new_h)
 
         if self._last_map_obj:
-            self.draw_map(self._last_map_obj)
+            self.draw_map(self._last_map_obj, self._current_step)
+
+    def set_step(self, step: int) -> None:
+        """Update the visualization to show drones at a specific step"""
+        self._current_step = step
+        if self._last_map_obj:
+            self.draw_map(self._last_map_obj, step)
 
     def _draw_smart_label(
         self, painter: QPainter, name: str, pos: QPoint, center: QPoint
     ) -> None:
-        # CAP FONT SIZE: Growing text too big is what causes the "glitch" look
-        # Text starts at 9pt and caps at 14pt regardless of zoom
         font_size: int = min(14, max(8, int(9 + self.zoom_level)))
         painter.setFont(QFont("Arial", font_size, QFont.Weight.Bold))
 
@@ -68,10 +73,8 @@ class MapWidget(QWidget):
         text_w = metrics.horizontalAdvance(name)
         text_h = metrics.height()
 
-        # Margin scales so text stays clear of the hub
         margin = int(12 * self.zoom_level)
 
-        # Calculate target position based on quadrant
         if pos.x() >= center.x():
             target_x = pos.x() + margin
         else:
@@ -82,23 +85,26 @@ class MapWidget(QWidget):
         else:
             target_y = pos.y() - margin
 
-        # White Halo for readability
+        # White halo
         painter.setPen(QPen(QColor(255, 255, 255, 200), 3))
         painter.drawText(target_x, target_y, name)
 
-        # Actual Text
+        # Actual text
         painter.setPen(Qt.GlobalColor.black)
         painter.drawText(target_x, target_y, name)
 
-    def draw_map(self, map_obj: Map) -> None:
+    def draw_map(self, map_obj: Map, current_step: int = 0) -> None:
+        """Draw the map with drones at the specified step"""
         self._last_map_obj = map_obj
+        self._current_step = current_step
+
         all_hubs: list[Hub] = [
-                *map_obj.hubs, map_obj.start_hub, map_obj.end_hub
-                ]
+            *map_obj.hubs, map_obj.start_hub, map_obj.end_hub
+        ]
         if not all_hubs:
             return
 
-        # 1. Bounds
+        # Calculate bounds
         min_x = min(hub.x for hub in all_hubs)
         max_x = max(hub.x for hub in all_hubs)
         min_y = min(hub.y for hub in all_hubs)
@@ -110,7 +116,6 @@ class MapWidget(QWidget):
         curr_w = self.label.width()
         curr_h = self.label.height()
 
-        # Use large padding that grows with zoom to keep labels in view
         dyn_padding = self.base_padding * self.zoom_level
 
         draw_w = float(curr_w - (dyn_padding * 2))
@@ -130,23 +135,153 @@ class MapWidget(QWidget):
 
         center_pt = QPoint(curr_w // 2, curr_h // 2)
 
-        # 2. Draw Connections (Thinner lines look better at high zoom)
+        # Draw connections
         painter.setPen(QPen(QColor(220, 220, 220), 2))
         for conn in map_obj.connections:
-            painter.drawLine(tr(conn.hub1.x, conn.hub1.y),
-                             tr(conn.hub2.x, conn.hub2.y))
+            painter.drawLine(
+                tr(conn.hub1.x, conn.hub1.y),
+                tr(conn.hub2.x, conn.hub2.y)
+            )
 
-        # 3. Draw Hubs & Labels
+        # Draw hubs
         for hub in all_hubs:
             pos = tr(hub.x, hub.y)
             self._draw_hub_at(painter, hub, pos)
             self._draw_smart_label(painter, hub.name, pos, center_pt)
 
+        # Draw drone paths (trails)
+        self._draw_drone_paths(painter, map_obj, current_step, tr)
+
+        # Draw drones at current positions
+        self._draw_drones(painter, map_obj, current_step, tr)
+
         painter.end()
         self.label.setPixmap(canvas)
 
+    def _draw_drone_paths(
+        self, painter: QPainter, map_obj: Map, current_step: int,
+        tr: Callable[[float, float], QPoint]
+    ) -> None:
+        """Draw the path trails for each drone up to current step"""
+        for drone in map_obj.drones:
+            if not drone.path or current_step == 0:
+                continue
+
+            # Draw path from start to current position
+            path_points = []
+
+            # Start position
+            path_points.append(tr(map_obj.start_hub.x, map_obj.start_hub.y))
+
+            # Add each position up to current step
+            for i in range(min(current_step, len(drone.path))):
+                hub = drone.path[i]
+                if hub is not None:  # Skip None (waiting turns)
+                    path_points.append(tr(hub.x, hub.y))
+
+            # Draw the trail
+            if len(path_points) > 1:
+                # Use different colors for different drones
+                drone_color = self._get_drone_color(drone.drone_id)
+                painter.setPen(
+                        QPen(drone_color, max(1, int(2 * self.zoom_level)),
+                             Qt.PenStyle.DashLine)
+                        )
+
+                for i in range(len(path_points) - 1):
+                    painter.drawLine(path_points[i], path_points[i + 1])
+
+    def _draw_drones(
+        self, painter: QPainter, map_obj: Map, current_step: int,
+        tr: Callable[[float, float], QPoint]
+    ) -> None:
+        """Draw drones at their current positions"""
+        for drone in map_obj.drones:
+            pos = self._get_drone_position_at_step(
+                    drone, map_obj, current_step
+                    )
+            if pos:
+                screen_pos = tr(pos[0], pos[1])
+                self._draw_drone_at(painter, drone, screen_pos)
+
+    def _get_drone_position_at_step(
+        self, drone: Drone, map_obj: Map, step: int
+    ) -> tuple[float, float] | None:
+        """Calculate drone position at a given step"""
+        if step == 0:
+            # All drones start at start_hub
+            return (map_obj.start_hub.x, map_obj.start_hub.y)
+
+        if step > len(drone.path):
+            # Drone has completed its journey
+            if drone.path:
+                last_hub = None
+                for hub in reversed(drone.path):
+                    if hub is not None:
+                        last_hub = hub
+                        break
+                if last_hub:
+                    return (last_hub.x, last_hub.y)
+            return None
+
+        # Find position at this step
+        current_hub = map_obj.start_hub
+        for i in range(step):
+            if i >= len(drone.path):
+                break
+            hub = drone.path[i]
+            if hub is not None:
+                current_hub = hub
+
+        return (current_hub.x, current_hub.y)
+
+    def _draw_drone_at(
+        self, painter: QPainter, drone: Drone, pos: QPoint
+    ) -> None:
+        """Draw a single drone at a position"""
+        size = int(min(30, 12 * self.zoom_level))
+        half = size // 2
+
+        # Get drone color
+        color = self._get_drone_color(drone.drone_id)
+
+        # Draw drone as a filled circle
+        painter.setPen(QPen(Qt.GlobalColor.black, 1))
+        painter.setBrush(QBrush(color))
+        painter.drawEllipse(pos.x() - half, pos.y() - half, size, size)
+
+        # Draw drone ID
+        font_size = max(6, min(10, int(8 * self.zoom_level)))
+        painter.setFont(QFont("Arial", font_size, QFont.Weight.Bold))
+        painter.setPen(Qt.GlobalColor.white)
+
+        text = f"D{drone.drone_id}"
+        metrics = painter.fontMetrics()
+        text_w = metrics.horizontalAdvance(text)
+        text_h = metrics.height()
+
+        painter.drawText(
+            pos.x() - text_w // 2,
+            pos.y() + text_h // 4,
+            text
+        )
+
+    def _get_drone_color(self, drone_id: int) -> QColor:
+        """Get a consistent color for a drone based on its ID"""
+        # Use a color palette
+        colors = [
+            QColor(255, 100, 100),  # Red
+            QColor(100, 100, 255),  # Blue
+            QColor(100, 255, 100),  # Green
+            QColor(255, 200, 100),  # Orange
+            QColor(255, 100, 255),  # Magenta
+            QColor(100, 255, 255),  # Cyan
+            QColor(200, 100, 255),  # Purple
+            QColor(255, 255, 100),  # Yellow
+        ]
+        return colors[(drone_id - 1) % len(colors)]
+
     def _draw_hub_at(self, painter: QPainter, hub: Hub, pos: QPoint) -> None:
-        # Hub size scales, but we cap it so it doesn't dominate the screen
         size: int = int(min(60, 20 * self.zoom_level))
         half: int = size // 2
 
@@ -161,8 +296,11 @@ class MapWidget(QWidget):
         if h_type == "normal":
             painter.drawEllipse(x - half, y - half, size, size)
         elif h_type == "priority":
-            pts = [QPoint(x, y - half), QPoint(x - half, y + half),
-                   QPoint(x + half, y + half)]
+            pts = [
+                QPoint(x, y - half),
+                QPoint(x - half, y + half),
+                QPoint(x + half, y + half)
+            ]
             painter.drawPolygon(QPolygon(pts))
         elif h_type == "restricted":
             painter.drawRect(x - half, y - half, size, size)
