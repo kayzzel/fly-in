@@ -1,4 +1,3 @@
-from abc import abstractmethod
 from ..parser.map_data import MapDataDict
 from .Connection import Connection
 from .Drone import Drone
@@ -82,14 +81,13 @@ class Map:
             Drone(i + 1, self.start_hub) for i in range(self.drones_nb)
         ]
 
-    @abstractmethod
-    def is_map_solvable(map_obj: Map) -> bool:
+    def is_map_solvable(self) -> bool:
         """
         Checks if a physical path exists between start_hub and end_hub.
         Ignores capacity and turn limits; only respects 'blocked' status.
         """
-        start = map_obj.start_hub
-        target = map_obj.end_hub
+        start = self.start_hub
+        target = self.end_hub
 
         # If either start or end is blocked, it's impossible
         if (
@@ -112,7 +110,7 @@ class Map:
                 return True
 
             # Check all connections for the current hub
-            for conn in map_obj.connections:
+            for conn in self.connections:
                 # Find the "other" hub in the connection
                 neighbor = None
                 if conn.hub1.name == current_hub.name:
