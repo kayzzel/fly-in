@@ -1,7 +1,9 @@
+from abc import abstractmethod
 from ..parser.map_data import MapDataDict
 from .Connection import Connection
 from .Drone import Drone
 from .Hub import Hub
+from collections import deque
 
 
 class Map:
@@ -73,9 +75,59 @@ class Map:
         except ValueError as err:
             raise ValueError(err)
 
+        if not Map.is_map_solvable(self):
+            raise ValueError("Error: This map cannot be finished!")
+
         self.drones: list[Drone] = [
             Drone(i + 1, self.start_hub) for i in range(self.drones_nb)
         ]
+
+    @abstractmethod
+    def is_map_solvable(map_obj: Map) -> bool:
+        """
+        Checks if a physical path exists between start_hub and end_hub.
+        Ignores capacity and turn limits; only respects 'blocked' status.
+        """
+        start = map_obj.start_hub
+        target = map_obj.end_hub
+
+        # If either start or end is blocked, it's impossible
+        if (
+            start.hub_type.value == "blocked" or
+            target.hub_type.value == "blocked"
+                ):
+            return False
+
+        # Queue for BFS: stores the hub we are currently looking at
+        queue = deque([start])
+
+        # Keep track of visited hubs to avoid infinite loops
+        visited = {start.name}
+
+        while queue:
+            current_hub = queue.popleft()
+
+            # If we reached the target, the map is possible!
+            if current_hub.name == target.name:
+                return True
+
+            # Check all connections for the current hub
+            for conn in map_obj.connections:
+                # Find the "other" hub in the connection
+                neighbor = None
+                if conn.hub1.name == current_hub.name:
+                    neighbor = conn.hub2
+                elif conn.hub2.name == current_hub.name:
+                    neighbor = conn.hub1
+
+                # If we found neighbor we haven't visited and it's not blocked
+                if neighbor and neighbor.name not in visited:
+                    if neighbor.hub_type.value != "blocked":
+                        visited.add(neighbor.name)
+                        queue.append(neighbor)
+
+        # If the queue is empty and we never hit the target
+        return False
 
     def set_drones_steps(self, paths: list[list[Hub | None]]) -> None:
         self.max_steps = 0
