@@ -53,22 +53,23 @@ class MapData:
             i += 1
 
         # Look if the first line is the drones number
-        if not lines[i].startswith("nb_drones: "):
+        if not lines[i].startswith("nb_drones:"):
             raise ValueError(
                 "The file must start with the nb of drones "
                 f"(line {i + 1})\n"
                 f'"{lines[i]}"'
             )
+        nb_drones: str = lines[i].split("#")[0].split(":")[1].strip()
 
         # Look if the value of drone number is a positive int
-        if not lines[i][11::].isdigit():
+        if not nb_drones.isdigit():
             raise ValueError(
                 "The number of drones must be a positive int "
                 f"(line {i + 1})\n"
                 f'"{lines[i]}"'
             )
 
-        self.__drones_nb = int(lines[i][11::])
+        self.__drones_nb = int(nb_drones)
 
         i += 1
 
@@ -82,7 +83,7 @@ class MapData:
             if not line:
                 continue
 
-            elif line.startswith("start_hub: "):
+            elif line.startswith("start_hub:"):
 
                 # If the start_hub is already defined then throw an error
                 if self.__start_hub:
@@ -95,7 +96,7 @@ class MapData:
                 if error:
                     raise ValueError(f'{error} (line {index + 1})\n"{line}"')
 
-            elif line.startswith("end_hub: "):
+            elif line.startswith("end_hub:"):
 
                 # If the end_hub is already defined then throw an error
                 if self.__end_hub:
@@ -108,7 +109,7 @@ class MapData:
                 if error:
                     raise ValueError(f'{error} (line {index + 1})\n"{line}"')
 
-            elif line.startswith("hub: "):
+            elif line.startswith("hub:"):
                 hub, error = self.pars_hub(line)
 
                 if error or not hub:
@@ -116,7 +117,7 @@ class MapData:
 
                 self.__hubs.append(hub)
 
-            elif line.startswith("connection: "):
+            elif line.startswith("connection:"):
                 connection, error = self.pars_connection(line)
 
                 if error or not connection:
@@ -124,7 +125,7 @@ class MapData:
 
                 self.__connections.append(connection)
 
-            elif line.startswith("nb_drones: "):
+            elif line.startswith("nb_drones:"):
                 raise ValueError(
                     f'"nb_drones" already defined (line {index + 1})\n'
                     f'"{line}"'
@@ -147,12 +148,12 @@ class MapData:
 
     def pars_hub(self, line: str) -> tuple[HubData | None, str | None]:
 
-        part: list[str] = line.split(maxsplit=1)
+        part: list[str] = line.split(":", 1)
 
         if len(part) == 1:
             return None, "Hub has no data to descibe it"
 
-        data: list[str] = part[1].split(maxsplit=3)
+        data: list[str] = part[1].strip().split(maxsplit=3)
 
         if len(data) < 3:
             return None, (
@@ -177,7 +178,7 @@ class MapData:
 
         if not (y[0] == "-" and y[1::].isdigit()) and not y.isdigit():
             return None, (
-                "Invalide format for y, must be an integer " f"(y: {y})"
+                "Invalid format for y, must be an integer " f"(y: {y})"
             )
 
         if len(data) == 3:
@@ -193,11 +194,23 @@ class MapData:
 
         metadatas: list[str] = metadata_array[1:-1].split()
 
+        if "[" in metadata_array[1:-1]:
+            return None, (
+                "Backet not closed in metadatas"
+                f"(metadata: {metadata_array})"
+            )
+
+        if "]" in metadata_array[1:-1]:
+            return None, (
+                "Backet not opened in metadatas"
+                f"(metadata: {metadata_array})"
+            )
+
         zone: HubType = HubType.NORMAL
         color: Color | None = None
         max_drones: int = 1
 
-        if line.startswith("start_hub: "):
+        if line.startswith("start_hub:") or line.startswith("end_hub:"):
             max_drones = self.__drones_nb
 
         seted_key: list[str] = []
@@ -232,10 +245,7 @@ class MapData:
 
             elif key == "color":
                 if value not in Color._value2member_map_:
-                    return None, (
-                        "The color is not in the defined one "
-                        f"(color: {value})"
-                    )
+                    value = "black"
 
                 color = Color(value)
                 seted_key.append(key)
@@ -260,12 +270,12 @@ class MapData:
         self, line: str
     ) -> tuple[ConnectionData | None, str | None]:
 
-        part: list[str] = line.split(maxsplit=1)
+        part: list[str] = line.split(":", 1)
 
         if len(part) <= 1:
             return None, "Connection has no data to descibe it"
 
-        data: list[str] = part[1].split(maxsplit=1)
+        data: list[str] = part[1].strip().split(maxsplit=1)
 
         connected_hub: list[str] = data[0].split("-")
 
@@ -312,6 +322,21 @@ class MapData:
                 "Metadatas must be inside brackets -> [...] "
                 f"(metadata: {metadata})"
             )
+
+        if "[" in metadata[1:-1]:
+            return None, (
+                "Backet not closed in metadatas"
+                f"(metadata: {metadata})"
+            )
+
+        if "]" in metadata[1:-1]:
+            return None, (
+                "closing not opened bracket in metadatas"
+                f"(metadata: {metadata})"
+            )
+
+        if not metadata[1:-1].strip():
+            return ConnectionData(connected_hub[0], connected_hub[1]), None
 
         if len(metadata[1:-1].strip().split(maxsplit=1)) != 1:
             return None, (

@@ -53,9 +53,10 @@ class Map:
                 data["end_hub"], self.hubs + [self.start_hub]
             )
 
-            if self.end_hub.max_drones < 1:
+            if self.end_hub.max_drones < self.drones_nb:
                 raise ValueError(
-                    'The "max_drones" of the "start_hub"' "must be at least 1"
+                    'The "max_drones" of the "end_hub"'
+                    'must be at least the same as the "drones_nb"'
                 )
 
         except ValueError as err:
