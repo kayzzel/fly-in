@@ -74,11 +74,12 @@ class MapData:
 
         # Itterating over all the line of the file to pars it
         for index in range(i, len(lines)):
-            line: str = lines[index]
+            line: str = lines[index].split("#")[0]
+            line = line.rstrip()
 
             # If the line is emtpy or is a comment (start with '#')
             # just ignore it
-            if line.strip() == "" or line.startswith("#"):
+            if not line:
                 continue
 
             elif line.startswith("start_hub: "):
@@ -146,12 +147,12 @@ class MapData:
 
     def pars_hub(self, line: str) -> tuple[HubData | None, str | None]:
 
-        part: list[str] = line.split(" ", 1)
+        part: list[str] = line.split(maxsplit=1)
 
         if len(part) == 1:
             return None, "Hub has no data to descibe it"
 
-        data: list[str] = part[1].split(" ", 3)
+        data: list[str] = part[1].split(maxsplit=3)
 
         if len(data) < 3:
             return None, (
@@ -190,7 +191,7 @@ class MapData:
                 f"(metadata: {metadata_array})"
             )
 
-        metadatas: list[str] = metadata_array[1:-1].split(" ")
+        metadatas: list[str] = metadata_array[1:-1].split()
 
         zone: HubType = HubType.NORMAL
         color: Color | None = None
@@ -259,12 +260,12 @@ class MapData:
         self, line: str
     ) -> tuple[ConnectionData | None, str | None]:
 
-        part: list[str] = line.split(" ", 1)
+        part: list[str] = line.split(maxsplit=1)
 
         if len(part) <= 1:
             return None, "Connection has no data to descibe it"
 
-        data: list[str] = part[1].split(" ", 1)
+        data: list[str] = part[1].split(maxsplit=1)
 
         connected_hub: list[str] = data[0].split("-")
 
@@ -278,6 +279,22 @@ class MapData:
             return None, (
                 "Less hubs thas needed to connect, 2 hubs needed "
                 f"(connection: {data[0]})"
+            )
+
+        hubs: list[str] = [hub.name for hub in self.__hubs]
+        if self.__start_hub:
+            hubs.append(self.__start_hub.name)
+        if self.__end_hub:
+            hubs.append(self.__end_hub.name)
+
+        if connected_hub[0] not in hubs:
+            return None, (
+                "Hub 1 not in already define hubs" f"(connection: {data[0]})"
+            )
+
+        if connected_hub[1] not in hubs:
+            return None, (
+                "Hub 2 not in already define hubs" f"(connection: {data[0]})"
             )
 
         if connected_hub[0] == connected_hub[1]:
@@ -296,7 +313,13 @@ class MapData:
                 f"(metadata: {metadata})"
             )
 
-        data_split = metadata[1:-1].split("=", 1)
+        if len(metadata[1:-1].strip().split(maxsplit=1)) != 1:
+            return None, (
+                "Too many data in the connection metadata"
+                f"(metadata: {metadata})"
+            )
+
+        data_split = metadata[1:-1].strip().split("=", 1)
 
         if len(data_split) != 2:
             return None, (
@@ -307,11 +330,10 @@ class MapData:
         key, value = data_split
 
         if key != "max_link_capacity":
-            if not value.isdigit():
-                return None, (
-                    "the key is not in the authorised keys -> "
-                    f"max_link_capacity (metadata: {metadata})"
-                )
+            return None, (
+                "the key is not in the authorised keys -> "
+                f"max_link_capacity (metadata: {metadata})"
+            )
 
         if not value.isdigit():
             return None, (
