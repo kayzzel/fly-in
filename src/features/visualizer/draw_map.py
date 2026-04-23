@@ -43,7 +43,7 @@ class MapWidget(QWidget):
         self.base_padding: int = padding
 
         self.__last_map_obj: Map | None = None
-        self.__current_step: int = 0  # Track current visualization step
+        self.__current_step: int = 0
 
         self.label: QLabel = QLabel()
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -51,9 +51,9 @@ class MapWidget(QWidget):
         layout: QVBoxLayout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.label)
-        self._init_canvas()
+        self.__init_canvas()
 
-    def _init_canvas(self) -> None:
+    def __init_canvas(self) -> None:
         canvas: QPixmap = QPixmap(self.base_width, self.base_height)
         canvas.fill(Qt.GlobalColor.white)
         self.label.setPixmap(canvas)
@@ -94,7 +94,7 @@ class MapWidget(QWidget):
         if self.__last_map_obj:
             self.draw_map(self.__last_map_obj, step)
 
-    def _draw_smart_label(
+    def __draw_smart_label(
         self, painter: QPainter, name: str, pos: QPoint, center: QPoint
     ) -> None:
         """
@@ -127,11 +127,9 @@ class MapWidget(QWidget):
         else:
             target_y = pos.y() - margin
 
-        # White halo
         painter.setPen(QPen(QColor(255, 255, 255, 200), 3))
         painter.drawText(target_x, target_y, name)
 
-        # Actual text
         painter.setPen(Qt.GlobalColor.black)
         painter.drawText(target_x, target_y, name)
 
@@ -155,7 +153,6 @@ class MapWidget(QWidget):
         if not all_hubs:
             return
 
-        # Calculate bounds
         min_x = min(hub.x for hub in all_hubs)
         max_x = max(hub.x for hub in all_hubs)
         min_y = min(hub.y for hub in all_hubs)
@@ -186,7 +183,6 @@ class MapWidget(QWidget):
 
         center_pt = QPoint(curr_w // 2, curr_h // 2)
 
-        # Draw connections
         painter.setPen(QPen(QColor(220, 220, 220), 2))
         for conn in map_obj.connections:
             painter.drawLine(
@@ -194,22 +190,19 @@ class MapWidget(QWidget):
                 tr(conn.hub2.x, conn.hub2.y)
             )
 
-        # Draw hubs
         for hub in all_hubs:
             pos = tr(hub.x, hub.y)
-            self._draw_hub_at(painter, hub, pos)
-            self._draw_smart_label(painter, hub.name, pos, center_pt)
+            self.__draw_hub_at(painter, hub, pos)
+            self.__draw_smart_label(painter, hub.name, pos, center_pt)
 
-        # Draw drone paths (trails)
-        self._draw_drone_paths(painter, map_obj, current_step, tr)
+        self.__draw_drone_paths(painter, map_obj, current_step, tr)
 
-        # Draw drones at current positions
-        self._draw_drones(painter, map_obj, current_step, tr)
+        self.__draw_drones(painter, map_obj, current_step, tr)
 
         painter.end()
         self.label.setPixmap(canvas)
 
-    def _draw_drone_paths(
+    def __draw_drone_paths(
         self, painter: QPainter, map_obj: Map, current_step: int,
         tr: Callable[[float, float], QPoint]
     ) -> None:
@@ -230,18 +223,14 @@ class MapWidget(QWidget):
             if not drone.path or current_step == 0:
                 continue
 
-            # Draw path from start to current position
             path_points = []
 
-            # Start position
             current_hub = map_obj.start_hub
             path_points.append(tr(current_hub.x, current_hub.y))
 
-            # Add each position up to current step
             for i in range(min(current_step, len(drone.path))):
                 hub = drone.path[i]
 
-                # Check if this is a restricted zone entry
                 next_hub = None
 
                 if i + 1 < len(drone.path):
@@ -253,7 +242,6 @@ class MapWidget(QWidget):
                         next_hub.hub_type.value == "restricted"
                         ):
 
-                    # Add midpoint for in-transit state
                     mid_x = (current_hub.x + next_hub.x) / 2.0
                     mid_y = (current_hub.y + next_hub.y) / 2.0
                     path_points.append(tr(mid_x, mid_y))
@@ -262,10 +250,8 @@ class MapWidget(QWidget):
                     path_points.append(tr(hub.x, hub.y))
                     current_hub = hub
 
-            # Draw the trail
             if len(path_points) > 1:
-                # Use different colors for different drones
-                drone_color = self._get_drone_color(drone.drone_id)
+                drone_color = self.__get_drone_color(drone.drone_id)
                 painter.setPen(
                         QPen(drone_color, max(1, int(2 * self.zoom_level)),
                              Qt.PenStyle.DashLine)
@@ -274,7 +260,7 @@ class MapWidget(QWidget):
                 for i in range(len(path_points) - 1):
                     painter.drawLine(path_points[i], path_points[i + 1])
 
-    def _draw_drones(
+    def __draw_drones(
         self, painter: QPainter, map_obj: Map, current_step: int,
         tr: Callable[[float, float], QPoint]
     ) -> None:
@@ -291,14 +277,14 @@ class MapWidget(QWidget):
         tr -> The coordinate transformation function.
         """
         for drone in map_obj.drones:
-            pos = self._get_drone_position_at_step(
+            pos = self.__get_drone_position_at_step(
                     drone, map_obj, current_step
                 )
             if pos:
                 screen_pos = tr(pos[0], pos[1])
-                self._draw_drone_at(painter, drone, screen_pos)
+                self.__draw_drone_at(painter, drone, screen_pos)
 
-    def _get_drone_position_at_step(
+    def __get_drone_position_at_step(
         self, drone: Drone, map_obj: Map, step: int
     ) -> tuple[float, float] | None:
         """
@@ -316,11 +302,9 @@ class MapWidget(QWidget):
         A tuple of (x, y) map coordinates or None.
         """
         if step == 0:
-            # All drones start at start_hub
             return (map_obj.start_hub.x, map_obj.start_hub.y)
 
         if step > len(drone.path):
-            # Drone has completed its journey
             if drone.path:
                 last_hub = None
                 for hub in reversed(drone.path):
@@ -331,7 +315,6 @@ class MapWidget(QWidget):
                     return (last_hub.x, last_hub.y)
             return None
 
-        # Find position at this step
         current_hub = map_obj.start_hub
 
         for i in range(step):
@@ -339,8 +322,6 @@ class MapWidget(QWidget):
                 break
 
             hub = drone.path[i]
-            # Check if this is the first turn of a restricted zone entry
-            # Path has None followed by the restricted hub
             next_hub = None
 
             if i + 1 < len(drone.path):
@@ -353,7 +334,6 @@ class MapWidget(QWidget):
                     i == step - 1
                     ):
 
-                # Drone is in transit - show midway on connection
                 mid_x = (current_hub.x + next_hub.x) / 2.0
                 mid_y = (current_hub.y + next_hub.y) / 2.0
                 return (mid_x, mid_y)
@@ -363,7 +343,7 @@ class MapWidget(QWidget):
 
         return (current_hub.x, current_hub.y)
 
-    def _draw_drone_at(
+    def __draw_drone_at(
         self, painter: QPainter, drone: Drone, pos: QPoint
     ) -> None:
         """
@@ -379,15 +359,12 @@ class MapWidget(QWidget):
         size = int(min(30, 12 * self.zoom_level))
         half = size // 2
 
-        # Get drone color
-        color = self._get_drone_color(drone.drone_id)
+        color = self.__get_drone_color(drone.drone_id)
 
-        # Draw drone as a filled circle
         painter.setPen(QPen(Qt.GlobalColor.black, 1))
         painter.setBrush(QBrush(color))
         painter.drawEllipse(pos.x() - half, pos.y() - half, size, size)
 
-        # Draw drone ID
         font_size = max(6, min(10, int(8 * self.zoom_level)))
         painter.setFont(QFont("Arial", font_size, QFont.Weight.Bold))
         painter.setPen(Qt.GlobalColor.white)
@@ -403,7 +380,7 @@ class MapWidget(QWidget):
             text
         )
 
-    def _get_drone_color(self, drone_id: int) -> QColor:
+    def __get_drone_color(self, drone_id: int) -> QColor:
         """
             Description:
         Maps a drone's unique ID to a consistent color from a predefined
@@ -416,7 +393,6 @@ class MapWidget(QWidget):
             Return value:
         A QColor object assigned to that specific drone.
         """
-        # Use a color palette
         colors = [
             QColor(255, 100, 100),  # Red
             QColor(100, 100, 255),  # Blue
@@ -429,7 +405,7 @@ class MapWidget(QWidget):
         ]
         return colors[(drone_id - 1) % len(colors)]
 
-    def _draw_hub_at(self, painter: QPainter, hub: Hub, pos: QPoint) -> None:
+    def __draw_hub_at(self, painter: QPainter, hub: Hub, pos: QPoint) -> None:
         """
             Description:
         Draws a hub's physical representation based on its type (Circle for
@@ -445,7 +421,7 @@ class MapWidget(QWidget):
         half: int = size // 2
 
         color_val = hub.color.value if hub.color else None
-        brush = self._get_hub_brush(color_val, pos)
+        brush = self.__get_hub_brush(color_val, pos)
 
         painter.setPen(QPen(Qt.GlobalColor.black, 1))
         painter.setBrush(brush)
@@ -469,7 +445,7 @@ class MapWidget(QWidget):
             painter.drawLine(x - half, y - half, x + half, y + half)
             painter.drawLine(x + half, y - half, x - half, y + half)
 
-    def _get_hub_brush(self, color_val: str | None, pos: QPoint) -> QBrush:
+    def __get_hub_brush(self, color_val: str | None, pos: QPoint) -> QBrush:
         """
             Description:
         Determines the fill style for a hub, handling both solid colors and
