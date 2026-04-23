@@ -11,12 +11,14 @@ class MapDataDict(TypedDict):
     the dict that contain all the data to create the map from the parsed data
 
         Attributes:
+    map_name -> the name of the file parsed
     drones_nb-> the number of drones that need to go throught the map
     start_hub -> the hub all the drones starts to
     end_hub -> the hub all the drones want to go to
     hubs -> a list of all the hubs on the map except start and end
     connections -> a list of all the connections on the map
     """
+    map_name: str
     drones_nb: int
     start_hub: HubData | None
     end_hub: HubData | None
@@ -30,6 +32,7 @@ class MapData:
     contain all the parsed data do create a Map
 
         Attributes:
+    __map_name -> the name of the file parsed
     __drones_nb -> the number of drones that need to go throught the map
     __start_hub -> the hub all the drones starts to
     __end_hub -> the hub all the drones want to go to
@@ -37,6 +40,7 @@ class MapData:
     __connections -> a list of all the connections on the map
     """
     def __init__(self) -> None:
+        self.__map_name: str
         self.__drones_nb: int = 0
         self.__start_hub: HubData | None = None
         self.__end_hub: HubData | None = None
@@ -76,6 +80,8 @@ class MapData:
                 f'Couldn\'t open "{filename}" because:\n'
                 f"Error {err.__class__.__name__}: {err}"
             )
+
+        self.__map_name = filename.split("/")[-1]
 
         i: int = 0
 
@@ -446,6 +452,7 @@ class MapData:
         a MapDataDict that contain all the data of the parsed map
         """
         return {
+            "map_name": self.__map_name,
             "drones_nb": self.__drones_nb,
             "start_hub": self.__start_hub,
             "end_hub": self.__end_hub,

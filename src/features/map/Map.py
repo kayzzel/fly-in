@@ -21,6 +21,7 @@ class Map:
     max_steps -> The duration of the longest drone path in the simulation.
     """
     def __init__(self, data: MapDataDict) -> None:
+        self.map_name: str = data["map_name"]
         self.drones_nb: int
         self.start_hub: Hub
         self.end_hub: Hub
@@ -170,12 +171,15 @@ class Map:
             if self.max_steps < len(paths[index]):
                 self.max_steps = len(paths[index])
 
+        self.print_algo()
+
     def print_algo(self) -> None:
         """
             Description:
         Iterates through the simulation steps and prints the drone movements
         to the terminal in the required format (P<id>-<hub_name>)
         """
+        print("----", self.map_name, "----\n")
         for i in range(1, self.max_steps):
             first: bool = True
             for drone in self.drones:
@@ -191,3 +195,4 @@ class Map:
                     print(" " + move, end="")
 
             print()
+        print()

@@ -19,8 +19,6 @@ def main() -> None:
     try:
         map_data.parsing(filename)
         map_info: Map = Map(map_data.get_map_data())
-        algo(map_info)
-        map_info.print_algo()
 
     except Exception as err:
         print(err)
