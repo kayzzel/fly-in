@@ -3,7 +3,6 @@ from PyQt6.QtWidgets import QApplication
 
 from src.features.map.Map import Map
 from src.features.parser import MapData
-from src.features.algo.algo import algo
 from src.features.visualizer.map_visu import MainWindow
 
 
