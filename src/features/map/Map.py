@@ -75,7 +75,7 @@ class Map:
         except ValueError as err:
             raise ValueError(err)
 
-        if not Map.is_map_solvable(self):
+        if not self.is_map_solvable():
             raise ValueError("Error: This map cannot be finished!")
 
         self.drones: list[Drone] = [

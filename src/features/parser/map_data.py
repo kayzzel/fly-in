@@ -194,15 +194,9 @@ class MapData:
 
         metadatas: list[str] = metadata_array[1:-1].split()
 
-        if "[" in metadata_array[1:-1]:
+        if [1 for bracket in "[](){}" if bracket in metadata_array[1:-1]]:
             return None, (
-                "Backet not closed in metadatas"
-                f"(metadata: {metadata_array})"
-            )
-
-        if "]" in metadata_array[1:-1]:
-            return None, (
-                "Backet not opened in metadatas"
+                "To many brackets/parenthesis in metadatas"
                 f"(metadata: {metadata_array})"
             )
 
@@ -323,15 +317,9 @@ class MapData:
                 f"(metadata: {metadata})"
             )
 
-        if "[" in metadata[1:-1]:
+        if [1 for bracket in "[](){}" if bracket in metadata[1:-1]]:
             return None, (
-                "Backet not closed in metadatas"
-                f"(metadata: {metadata})"
-            )
-
-        if "]" in metadata[1:-1]:
-            return None, (
-                "closing not opened bracket in metadatas"
+                "To many brackets/parenthesis in metadatas"
                 f"(metadata: {metadata})"
             )
 
