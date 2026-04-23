@@ -112,6 +112,9 @@ class Map:
 
             # Check all connections for the current hub
             for conn in self.connections:
+
+                if conn.max_link_capacity < 1:
+                    continue
                 # Find the "other" hub in the connection
                 neighbor = None
                 if conn.hub1.name == current_hub.name:
@@ -121,7 +124,10 @@ class Map:
 
                 # If we found neighbor we haven't visited and it's not blocked
                 if neighbor and neighbor.name not in visited:
-                    if neighbor.hub_type.value != "blocked":
+                    if (
+                            neighbor.hub_type.value != "blocked" and
+                            neighbor.max_drones > 0
+                            ):
                         visited.add(neighbor.name)
                         queue.append(neighbor)
 
