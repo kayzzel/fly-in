@@ -6,6 +6,19 @@ from ..map.Hub import Hub
 
 
 class ExploringDrone:
+    """
+        Description:
+    the drones that are used in the pathfinding algorithme tha correspond
+    to each of the branch of the algo, contain the info to retrace it's path
+
+        Attributes:
+    path -> a list of the hubs it has got to or
+            None if for a turn it didn't moved
+    connections -> a list of the connection it has used or
+                   None if for a turn it didn't moved
+    actual_hub -> the hub it is currently at
+    in_transit_to_restricted -> if it in the middle of a restricted connection
+    """
     def __init__(
             self,
             path: list[Hub | None],
@@ -20,6 +33,15 @@ class ExploringDrone:
 
 
 class HubUsage(TypedDict):
+    """
+        Description:
+    the format of the dict that is used in the Turn class
+
+        Attributes:
+    name -> the name of the hub that stores the drones
+    drone_in -> the number of drones that are in this hub for the turn
+    max_drones -> the max number of the this hub can contain
+    """
     name: str
     drones_in: int
     max_drones: int
@@ -44,10 +66,21 @@ class Turn:
                 drone: ExploringDrone,
                 move: Connection
             ) -> ExploringDrone | None:
+        """
+            Description:
+        return a ExploringDrone if it can go throught the given connection
+        considering the state of the Turn else return None
+
+            Parameters:
+        drone -> the ExploringDrone that want to move
+        move -> the connection the drone want to move throught
+
+            Return value:
+        a ExploringDrone if the given drone could move else return None
+        """
 
         actual_hub: Hub = drone.actual_hub
 
-        # Check connection capacity
         connection_count: int = len([
                     c
                     for c in self.moves
@@ -63,7 +96,6 @@ class Turn:
         if connection_count >= move.max_link_capacity:
             return None
 
-        # Find next hub
         if move.hub1 == actual_hub:
             next_hub = move.hub2
         elif move.hub2 == actual_hub:
@@ -74,30 +106,24 @@ class Turn:
         if next_hub in drone.path:
             return None
 
-        # Check if blocked
         if next_hub.hub_type == HubType.BLOCKED or next_hub.max_drones == 0:
             return None
 
-        # === NEW: If going to RESTRICTED hub, start 2-turn journey ===
         if (next_hub.hub_type == HubType.RESTRICTED and
                 not drone.in_transit_to_restricted):
-            # Turn 1: Start going to restricted hub
             return ExploringDrone(
-                [*drone.path, None],  # None = in transit
+                [*drone.path, None],
                 [*drone.connections, move],
-                actual_hub,  # Stay at current hub
-                in_transit_to_restricted=True  # Flag: must complete next turn
+                actual_hub,
+                in_transit_to_restricted=True
             )
 
-        # Normal hub OR completing restricted hub entry (Turn 2)
-        # Check hub capacity
         hub_index: list[int] = [
             i for i in range(len(self.hubs))
             if self.hubs[i]["name"] == next_hub.name
         ]
 
         if not hub_index:
-            # Hub has space
             return ExploringDrone(
                 [*drone.path, next_hub],
                 [*drone.connections, move],
@@ -107,7 +133,6 @@ class Turn:
 
         index: int = hub_index[0]
         if self.hubs[index]["drones_in"] < self.hubs[index]["max_drones"]:
-            # Hub has space
             return ExploringDrone(
                 [*drone.path, next_hub],
                 [*drone.connections, move],
@@ -119,9 +144,19 @@ class Turn:
 
 
 def set_drone_in_turns(
-        drone: ExploringDrone,
-        turns: list[Turn]
-                       ) -> None:
+                drone: ExploringDrone,
+                turns: list[Turn]
+           ) -> None:
+    """
+        Description:
+    set a given drone in a reservation_map to put the path it used to
+    in the reservation_map for the next_drones to not move where they
+    can't
+
+        Parameters:
+    drone -> the drone that contain the path to set in the reservation_map
+    turns -> the reservation_map that is a list of Turn
+    """
 
     for index in range(len(drone.path) - 1):
         turn: Turn = turns[index]

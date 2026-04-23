@@ -1,4 +1,14 @@
 class ConnectionData:
+    """
+        Desciption:
+    contain all the parsed data do create a Connection
+
+        Attributes:
+    hub1 -> the name of the first hub of the connection
+    hub2 -> the name of the second hub of the connection
+    max_link_capacity -> the max number of drones that can go
+                         throught the connection at the same time
+    """
     def __init__(
         self,
         hub1: str,

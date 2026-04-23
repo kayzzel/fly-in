@@ -2,6 +2,10 @@ from enum import Enum
 
 
 class Color(str, Enum):
+    """
+        Description:
+    an Enum that contain all the color that I can use in PyQt6
+    """
     ALICEBLUE = "aliceblue"
     ANTIQUEWHITE = "antiquewhite"
     AQUA = "aqua"
@@ -160,7 +164,7 @@ class HubType(str, Enum):
 
         Values:
     NORMAL -> Standard hub (cost -> 1)
-    BLOCKED -> Can access this hub
+    BLOCKED -> Can't access this hub
     PRIORITY -> prefered hub, same cost as NORMAL
     RESTRICTED -> dangerous hub (cost -> 2)
     """

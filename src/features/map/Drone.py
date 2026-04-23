@@ -14,7 +14,7 @@ class Drone:
         delivered: Whether the drone has reached the end hub.
     """
 
-    def __init__(self, drone_id: int, start_hub: Hub) -> None:
+    def __init__(self, drone_id: int) -> None:
         """Initialize a drone at the start hub."""
         self.drone_id: int = drone_id
         self.path: list[Hub | None] = []

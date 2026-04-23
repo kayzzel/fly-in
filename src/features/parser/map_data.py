@@ -6,7 +6,17 @@ from .hub_data import HubData
 
 
 class MapDataDict(TypedDict):
+    """
+        Description:
+    the dict that contain all the data to create the map from the parsed data
 
+        Attributes:
+    drones_nb-> the number of drones that need to go throught the map
+    start_hub -> the hub all the drones starts to
+    end_hub -> the hub all the drones want to go to
+    hubs -> a list of all the hubs on the map except start and end
+    connections -> a list of all the connections on the map
+    """
     drones_nb: int
     start_hub: HubData | None
     end_hub: HubData | None
@@ -15,6 +25,17 @@ class MapDataDict(TypedDict):
 
 
 class MapData:
+    """
+        Description:
+    contain all the parsed data do create a Map
+
+        Attributes:
+    __drones_nb -> the number of drones that need to go throught the map
+    __start_hub -> the hub all the drones starts to
+    __end_hub -> the hub all the drones want to go to
+    __hubs -> a list of all the hubs on the map except start and end
+    __connections -> a list of all the connections on the map
+    """
     def __init__(self) -> None:
         self.__drones_nb: int = 0
         self.__start_hub: HubData | None = None
@@ -23,6 +44,16 @@ class MapData:
         self.__connections: list[ConnectionData]
 
     def parsing(self, filename: str) -> None:
+        """
+            Description:
+        take the name of a file that is supposed to create all the data to
+        create a map, try to open it and read its content to get all the data
+        to create a map, raise an error if it couldn't open the file or if
+        the format or information in the file is wrong
+
+            Parameters:
+        filename -> the file that will be parsed to get all the data
+        """
 
         # reseting the map data
         self.__drones_nb = 0
@@ -147,6 +178,19 @@ class MapData:
             raise ValueError("No connections found in the file")
 
     def pars_hub(self, line: str) -> tuple[HubData | None, str | None]:
+        """
+            Description:
+        try to create a HubData based on a given line
+
+            Parameters:
+        line -> a line will be used to create the Hubdata
+
+            Return value:
+        a tuple containing as first element the HubData or None
+        if it couldn't create it and as second element a str containing
+        the error message if an error accured or None if the creation
+        was successfull
+        """
 
         part: list[str] = line.split(":", 1)
 
@@ -263,6 +307,19 @@ class MapData:
     def pars_connection(
         self, line: str
     ) -> tuple[ConnectionData | None, str | None]:
+        """
+            Description:
+        try to create a ConnectionData based on a given line
+
+            Parameters:
+        line -> a line will be used to create the Connectiondata
+
+            Return value:
+        a tuple containing as first element the ConnectionData or None
+        if it couldn't create it and as second element a str containing
+        the error message if an error accured or None if the creation
+        was successfull
+        """
 
         part: list[str] = line.split(":", 1)
 
@@ -360,6 +417,10 @@ class MapData:
         )
 
     def __str__(self) -> str:
+        """
+            Return value:
+        a str that represent the format I want the data to be printed
+        """
         value: str = ""
         value += f"drones_nb: {self.__drones_nb}\n"
         value += f"start_hub: {self.__start_hub}\n"
@@ -380,7 +441,10 @@ class MapData:
         return value
 
     def get_map_data(self) -> MapDataDict:
-
+        """
+            Return value:
+        a MapDataDict that contain all the data of the parsed map
+        """
         return {
             "drones_nb": self.__drones_nb,
             "start_hub": self.__start_hub,

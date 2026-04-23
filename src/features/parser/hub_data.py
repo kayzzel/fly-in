@@ -2,6 +2,19 @@ from ...utils.types import Color, HubType
 
 
 class HubData:
+    """
+        Desciption:
+    contain all the parsed data do create a Hub
+
+        Attributes:
+    name -> the name of the hub
+    x -> the x coordinate of the hub
+    y -> the y coordinate of the hub
+    hub_type -> the type of hub it is
+    color -> the color of the hub for the visualizer
+    max_drones -> the max number of drones that can be
+                  on this hub at the same time
+    """
     def __init__(
         self,
         name: str,
