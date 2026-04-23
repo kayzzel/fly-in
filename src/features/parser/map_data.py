@@ -75,7 +75,7 @@ class MapData:
                 lines = file.read().split("\n")
 
         # If it fails raise an error an early return with False
-        except OSError as err:
+        except (OSError, UnicodeDecodeError) as err:
             raise OSError(
                 f'Couldn\'t open "{filename}" because:\n'
                 f"Error {err.__class__.__name__}: {err}"
