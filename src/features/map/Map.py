@@ -6,6 +6,20 @@ from collections import deque
 
 
 class Map:
+    """
+        Description:
+    The core data structure representing the drone simulation environment.
+    It manages the lifecycle of hubs, connections, and drones, and provides
+    the interface for running algorithms and validating map connectivity.
+
+        Attributes:
+    drones_nb -> Total number of drones to be managed.
+    start_hub -> The entry point for all drones.
+    end_hub -> The target destination for all drones.
+    hubs -> List of intermediate zones (normal, priority, restricted, blocked).
+    connections -> List of paths linking the various hubs.
+    max_steps -> The duration of the longest drone path in the simulation.
+    """
     def __init__(self, data: MapDataDict) -> None:
         self.drones_nb: int
         self.start_hub: Hub
@@ -17,6 +31,15 @@ class Map:
         self.__create_map(data)
 
     def __create_map(self, data: MapDataDict) -> None:
+        """
+            Description:
+        Internal method that populates the Map attributes
+        (hubs, connections, drones) from the data dictionary
+        and performs initial validation on drone capacity.
+
+            Parameters:
+        data -> The dictionary containing raw map data to be processed.
+        """
 
         if not isinstance(data["drones_nb"], int) or data["drones_nb"] <= 0:
             raise ValueError('The "drones_nb" must be an int superior as 0')
@@ -84,8 +107,13 @@ class Map:
 
     def is_map_solvable(self) -> bool:
         """
-        Checks if a physical path exists between start_hub and end_hub.
-        Ignores capacity and turn limits; only respects 'blocked' status.
+            Description:
+        Uses a Breadth-First Search (BFS) algorithm to determine if a physical
+        path exists from the start_hub to the end_hub, respecting 'blocked'
+        zones and minimum capacities.
+
+            Return value:
+        A bool indicating True if the end_hub is reachable, False otherwise.
         """
         start = self.start_hub
         target = self.end_hub
@@ -127,6 +155,15 @@ class Map:
         return False
 
     def set_drones_steps(self, paths: list[list[Hub | None]]) -> None:
+        """
+            Description:
+        Assigns calculated paths to each drone in the map and updates the
+        global max_steps count for the simulation.
+
+            Parameters:
+        paths -> A list of lists where each sub-list contains the sequence
+                 of Hubs (or None for wait states) for a drone.
+        """
         self.max_steps = 0
         for index in range(len(paths)):
             self.drones[index].assign_path(paths[index])
@@ -134,6 +171,11 @@ class Map:
                 self.max_steps = len(paths[index])
 
     def print_algo(self) -> None:
+        """
+            Description:
+        Iterates through the simulation steps and prints the drone movements
+        to the terminal in the required format (P<id>-<hub_name>)
+        """
         for i in range(1, self.max_steps):
             first: bool = True
             for drone in self.drones:

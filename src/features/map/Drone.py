@@ -4,26 +4,51 @@ from .Hub import Hub
 
 
 class Drone:
-    """Represents a drone navigating the zone network.
+    """
+        Description:
+    Represents a drone navigating the zone network. It tracks its unique
+    identity and the sequence of hubs it must visit to complete its mission,
+    including handling complex movement logic for special zone types.
 
-    Attributes:
-        drone_id: Unique identifier.
-        current_hub: The zone currently occupied, or None if in transit.
-        path: Remaining planned path as a list of Hubs.
-        in_transit_to: The restricted hub being traveled toward (2-turn move).
-        delivered: Whether the drone has reached the end hub.
+        Attributes:
+    drone_id -> Unique integer identifier for the drone.
+    path -> A list of Hub objects or None values (representing wait/transit)
+            defining the drone's trajectory through the map.
     """
 
     def __init__(self, drone_id: int) -> None:
-        """Initialize a drone at the start hub."""
         self.drone_id: int = drone_id
         self.path: list[Hub | None] = []
 
     def assign_path(self, path: list[Hub | None]) -> None:
-        """Assign a planned path (excluding the start hub)."""
+        """
+            Description:
+        Sets the planned flight path for the drone, which will be used to
+        calculate movements during the simulation steps.
+
+            Parameters:
+        path -> A list containing the Hubs (or None) the drone will occupy
+                at each step.
+
+            Return value:
+        None
+        """
         self.path = path
 
     def get_move_at_step(self, step: int) -> None | str:
+        """
+            Description:
+        Calculates the specific movement string for the drone at a given
+        simulation turn. It handles standard moves to hubs and special
+        2-turn transit moves required for entering restricted hubs.
+
+            Parameters:
+        step -> The current turn index in the simulation.
+
+            Return value:
+        A str formatted as "D<id>-<hub>" or "D<id>-<from>-<to>" for restricted
+        entries, or None if the drone is stationary or has no move.
+        """
 
         if step >= len(self.path):
             return None

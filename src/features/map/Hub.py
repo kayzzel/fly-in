@@ -9,6 +9,22 @@ from ..parser.hub_data import HubData
 
 
 class Hub:
+    """
+        Description:
+    Represents a specific zone or node within the map. Each hub maintains its
+    spatial coordinates, regulatory constraints (zone type), visual properties,
+    and a list of physical connections to other hubs.
+
+        Attributes:
+    name -> Unique string identifier for the hub.
+    x -> Horizontal coordinate on the map canvas.
+    y -> Vertical coordinate on the map canvas.
+    hub_type -> Enumeration defining movement rules (normal, blocked, etc.).
+    color -> Optional visual color for UI rendering.
+    max_drones -> The maximum number of drones allowed to occupy this hub
+                  simultaneously.
+    connections -> List of Connection objects linked to this hub.
+    """
     def __init__(self, data: HubData, hubs: list[Hub]) -> None:
         self.name: str
         self.x: int
@@ -21,6 +37,19 @@ class Hub:
         self.__create_hub(data, hubs)
 
     def __create_hub(self, data: HubData, hubs: list[Hub]) -> None:
+        """
+            Description:
+        Validates the integrity of the hub data, checking for duplicate names,
+        invalid zone types, unsupported colors, and illegal capacity values
+        before assigning them to the instance attributes.
+
+            Parameters:
+        data -> The raw hub data to be validated and assigned.
+        hubs -> The current list of hubs used to verify name uniqueness.
+
+            Return value:
+        None
+        """
 
         hubs_names: list[str] = [hub.name for hub in hubs]
 

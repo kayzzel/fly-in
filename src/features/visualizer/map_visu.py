@@ -15,6 +15,25 @@ from ..algo.algo import algo
 
 
 class MainWindow(QMainWindow):
+    """
+        Description:
+    The primary application window that integrates the map visualization,
+    simulation controls, and data display. It manages the simulation state
+    (current steps), handles UI events from the toolbar, and facilitates
+    the loading of new map configurations and re-running the pathfinding
+    algorithm.
+
+        Attributes:
+    drone_map -> The current Map instance being visualized.
+    steps -> The current step index of the simulation.
+    max_steps -> The total number of steps in the current simulation.
+    canvas_size -> A tuple defining the base dimensions of the map canvas.
+    map_widget -> The custom widget responsible for drawing hubs and drones.
+    player_bar -> The toolbar containing simulation playback controls.
+    step_label -> UI label displaying the current progress through the
+                  simulation.
+    info_label -> UI label displaying detailed text about drone locations.
+    """
     def __init__(self, drone_map: Map) -> None:
         super().__init__()
         self.drone_map: Map = drone_map
@@ -23,17 +42,14 @@ class MainWindow(QMainWindow):
         self.max_steps = drone_map.max_steps
         self.canvas_size = (1600, 1600)
 
-        # --- set window sizes ---
         self.setMinimumSize(400, 300)
         self.setMaximumSize(self.canvas_size[0], self.canvas_size[1])
         self.resize(800, 600)
 
-        # --- Scroll area wrapping the map ---
         self.map_widget = MapWidget(
             canvas_width=self.canvas_size[0],
             canvas_height=self.canvas_size[1]
         )
-        # Initialize map at step 0
         self.map_widget.draw_map(self.drone_map, current_step=0)
 
         scroll: PannableScrollArea = PannableScrollArea(self)
@@ -43,7 +59,6 @@ class MainWindow(QMainWindow):
             Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft
         )
 
-        # Overlay the step label on top via a wrapper
         wrapper = QWidget()
         wrapper_layout = QVBoxLayout(wrapper)
         wrapper_layout.setContentsMargins(0, 0, 0, 0)
@@ -66,10 +81,8 @@ class MainWindow(QMainWindow):
         self.info_label.setStyleSheet(
             "font-size: 12px; background: transparent; padding: 5px;"
         )
-        # This is crucial: allows the label to expand to fit all text
         self.info_label.setWordWrap(True)
 
-        # 2. Create a Scroll Area to act as the container
         info_scroll = QScrollArea()
         info_scroll.setWidget(self.info_label)
         info_scroll.setWidgetResizable(True)
@@ -79,12 +92,10 @@ class MainWindow(QMainWindow):
             "border-radius: 5px; border: 1px solid #ccc;"
         )
 
-        # 3. Add the SCROLL AREA to your layout, not the label
         wrapper_layout.addWidget(info_scroll)
 
         self.setCentralWidget(wrapper)
 
-        # --- Toolbar ---
         self.player_bar = PlayerToolBar(self)
         self.addToolBar(Qt.ToolBarArea.BottomToolBarArea, self.player_bar)
         self.player_bar.request_next.connect(self.on_next)
@@ -94,7 +105,16 @@ class MainWindow(QMainWindow):
         self.player_bar.request_map_load.connect(self.load_new_map)
 
     def _get_drone_info(self) -> str:
-        """Generate info text about drone positions at current step"""
+        """
+            Description:
+        Generates a detailed summary of the simulation's current state,
+        listing which drones are at which hubs and identifying any drones
+        currently in a transit state between hubs.
+
+            Return value:
+        A formatted string containing total drone count, hub occupancy,
+        and transit status.
+        """
         if self.steps == 0:
             return (
                 f"Total Drones: {len(self.drone_map.drones)}\n"
@@ -103,12 +123,10 @@ class MainWindow(QMainWindow):
 
         info_lines = [f"Total Drones: {len(self.drone_map.drones)}"]
 
-        # Count drones at each location
         locations: dict[str, list[int]] = {}
         in_transit: list[tuple[int, str, str]] = []
 
         for drone in self.drone_map.drones:
-            # Check if drone is in transit to restricted zone
             transit_info = self._get_drone_transit_status(drone)
             if transit_info:
                 in_transit.append((
@@ -124,12 +142,10 @@ class MainWindow(QMainWindow):
                         locations[hub_name] = []
                     locations[hub_name].append(drone.drone_id)
 
-        # Display locations
         for hub_name, drone_ids in sorted(locations.items()):
             drone_list = ", ".join(f"D{did}" for did in sorted(drone_ids))
             info_lines.append(f"{hub_name}: {drone_list}")
 
-        # Display in-transit drones
         if in_transit:
             info_lines.append("")
             info_lines.append("In Transit:")
@@ -142,15 +158,20 @@ class MainWindow(QMainWindow):
                 self,
                 drone: Drone
            ) -> tuple[str, str] | None:
-        """Check if drone is in transit to a restricted zone
+        """
+            Description:
+        Determines if a specific drone is currently moving through a 2-turn
+        restricted zone sequence at the current simulation step.
 
-        Returns:
-            (from_hub_name, to_hub_name) if in transit, else None
+            Parameters:
+        drone -> The Drone instance to check for transit status.
+
+            Return value:
+        A tuple of (from_hub, to_hub) names if in transit, otherwise None.
         """
         if self.steps == 0 or self.steps > len(drone.path):
             return None
 
-        # Track current hub
         current_hub = self.drone_map.start_hub
 
         for i in range(self.steps):
@@ -159,8 +180,7 @@ class MainWindow(QMainWindow):
 
             hub = drone.path[i]
 
-            # Check if this step is the in-transit state
-            if i == self.steps - 1:  # Current step
+            if i == self.steps - 1:
                 next_hub = None
 
                 if i + 1 < len(drone.path):
@@ -172,7 +192,6 @@ class MainWindow(QMainWindow):
                         next_hub.hub_type.value == "restricted"
                         ):
 
-                    # This is the in-transit step
                     return (current_hub.name, next_hub.name)
 
             if hub is not None:
@@ -181,18 +200,27 @@ class MainWindow(QMainWindow):
         return None
 
     def _get_drone_current_hub(self, drone: Drone) -> Hub | None:
-        """Get the hub where a drone is at the current step"""
+        """
+            Description:
+        Retrieves the Hub object where a drone is currently located,
+        accounting for its initial position and movement history up
+        to the current step.
+
+            Parameters:
+        drone -> The Drone instance whose location is being queried.
+
+            Return value:
+        The Hub object currently occupied by the drone, or None.
+        """
         if self.steps == 0:
             return self.drone_map.start_hub
 
         if self.steps > len(drone.path):
-            # Drone completed - find last non-None hub
             for hub in reversed(drone.path):
                 if hub is not None:
                     return hub
             return None
 
-        # Find current position
         current_hub = self.drone_map.start_hub
         for i in range(self.steps):
             if i >= len(drone.path):
@@ -204,7 +232,12 @@ class MainWindow(QMainWindow):
         return current_hub
 
     def update_display(self) -> None:
-        """Update both the label and the map visualization"""
+        """
+            Description:
+        Synchronizes the UI components by updating the step label,
+        the drone information text, and triggering a repaint of the
+        MapWidget to reflect the current step.
+        """
         self.step_label.setText(
                 f"Step: {self.steps - 1} / {self.max_steps - 1}"
             )
@@ -212,6 +245,12 @@ class MainWindow(QMainWindow):
         self.map_widget.set_step(self.steps)
 
     def on_tick(self) -> None:
+        """
+            Description:
+        Automatically advances the simulation by one step. This is
+        triggered by the playback timer and stops the timer once
+        the maximum step count is reached.
+        """
         if self.steps < self.max_steps:
             self.steps += 1
             self.update_display()
@@ -219,38 +258,58 @@ class MainWindow(QMainWindow):
             self.player_bar.stop()
 
     def on_next(self) -> None:
+        """
+            Description:
+        Manually advances the simulation to the next step and pauses
+        automatic playback if it was running.
+        """
         if self.steps < self.max_steps:
             self.player_bar.stop()
             self.steps += 1
             self.update_display()
 
     def on_prev(self) -> None:
+        """
+            Description:
+        Manually reverses the simulation to the previous step and
+        pauses automatic playback if it was running.
+        """
         if self.steps > 1:
             self.player_bar.stop()
             self.steps -= 1
             self.update_display()
 
     def on_restart(self) -> None:
+        """
+            Description:
+        Resets the simulation state back to step one and stops
+        the playback timer.
+        """
         self.steps = 1
         self.player_bar.stop()
         self.update_display()
 
     def load_new_map(self, file_path: str) -> None:
-        """Logic to parse the new file and update the MapWidget."""
+        """
+            Description:
+        Attempts to parse a new file, construct a new Map, run the
+        pathfinding algorithm, and reset the visualization. Displays
+        a critical error dialog if parsing or algorithm execution fails.
+
+            Parameters:
+        file_path -> The absolute system path to the map text file.
+        """
         try:
             self.player_bar.stop()
 
-            # 1. Parse your new map
             map_data: MapData = MapData()
             map_data.parsing(file_path)
             new_map: Map = Map(map_data.get_map_data())
             algo(new_map)
 
-            # 2. Reset visualizer states
             self.steps = 1
             self.max_steps = new_map.max_steps
 
-            # 3. Tell the widget to draw the new map
             self.drone_map = new_map
             self.map_widget.draw_map(new_map, current_step=0)
 

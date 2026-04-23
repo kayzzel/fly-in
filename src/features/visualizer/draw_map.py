@@ -15,6 +15,21 @@ if TYPE_CHECKING:
 
 
 class MapWidget(QWidget):
+    """
+        Description:
+    The graphical core of the visualization system. It handles the rendering
+    of the entire map environment, including hubs (represented by unique shapes
+    and colors), connections between them, and the real-time movement and
+    trails of drones as they progress through simulation steps.
+
+        Attributes:
+    base_width -> The native width of the drawing canvas.
+    base_height -> The native height of the drawing canvas.
+    zoom_level -> A scalar value used to zoom the map in or out.
+    __last_map_obj -> Reference to the current Map being drawn to avoid
+                     redundant calculations.
+    __current_step -> The active simulation step being visualized.
+    """
     def __init__(
         self,
         canvas_width: int = 1600,
@@ -27,8 +42,8 @@ class MapWidget(QWidget):
         self.zoom_level: float = 1.0
         self.base_padding: int = padding
 
-        self._last_map_obj: Map | None = None
-        self._current_step: int = 0  # Track current visualization step
+        self.__last_map_obj: Map | None = None
+        self.__current_step: int = 0  # Track current visualization step
 
         self.label: QLabel = QLabel()
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -45,6 +60,15 @@ class MapWidget(QWidget):
         self.label.setFixedSize(self.base_width, self.base_height)
 
     def update_zoom(self, step: float) -> None:
+        """
+            Description:
+        Adjusts the current zoom level by a multiplier and resizes the widget
+        and its internal canvas accordingly. Triggers a redraw to maintain
+        clarity.
+
+            Parameters:
+        step -> The multiplier to apply to the current zoom level.
+        """
         new_zoom: float = self.zoom_level * step
         self.zoom_level = max(0.5, min(new_zoom, 15.0))
 
@@ -54,18 +78,36 @@ class MapWidget(QWidget):
         self.label.setFixedSize(new_w, new_h)
         self.setFixedSize(new_w, new_h)
 
-        if self._last_map_obj:
-            self.draw_map(self._last_map_obj, self._current_step)
+        if self.__last_map_obj:
+            self.draw_map(self.__last_map_obj, self.__current_step)
 
     def set_step(self, step: int) -> None:
-        """Update the visualization to show drones at a specific step"""
-        self._current_step = step
-        if self._last_map_obj:
-            self.draw_map(self._last_map_obj, step)
+        """
+            Description:
+        Sets the active simulation turn and refreshes the map to show the new
+        positions and trails of all drones at that specific point in time.
+
+            Parameters:
+        step -> The integer turn index to display.
+        """
+        self.__current_step = step
+        if self.__last_map_obj:
+            self.draw_map(self.__last_map_obj, step)
 
     def _draw_smart_label(
         self, painter: QPainter, name: str, pos: QPoint, center: QPoint
     ) -> None:
+        """
+            Description:
+        Renders hub names onto the map with dynamic positioning to ensure label
+        don't overlap the hub itself and remain legible using a "halo" effect.
+
+            Parameters:
+        painter -> The QPainter instance currently drawing on the canvas.
+        name -> The hub name to display.
+        pos -> The screen position of the hub.
+        center -> The center point of the canvas used to calculate label offset
+        """
         font_size: int = min(14, max(8, int(9 + self.zoom_level)))
         painter.setFont(QFont("Arial", font_size, QFont.Weight.Bold))
 
@@ -94,9 +136,18 @@ class MapWidget(QWidget):
         painter.drawText(target_x, target_y, name)
 
     def draw_map(self, map_obj: Map, current_step: int = 0) -> None:
-        """Draw the map with drones at the specified step"""
-        self._last_map_obj = map_obj
-        self._current_step = current_step
+        """
+            Description:
+        The main rendering loop. It calculates coordinate scaling, clears the
+        canvas, and orchestrates the drawing of connections, hubs, drone trails
+        and drones in their current positions.
+
+            Parameters:
+        map_obj -> The Map data structure containing all hubs and drones.
+        current_step -> The simulation turn index to render.
+        """
+        self.__last_map_obj = map_obj
+        self.__current_step = current_step
 
         all_hubs: list[Hub] = [
             *map_obj.hubs, map_obj.start_hub, map_obj.end_hub
@@ -162,9 +213,18 @@ class MapWidget(QWidget):
         self, painter: QPainter, map_obj: Map, current_step: int,
         tr: Callable[[float, float], QPoint]
     ) -> None:
-        """Draw the path trails for each drone up to current step
+        """
+            Description:
+        Draws dashed "snail trails" for each drone, representing the path taken
+        from the start hub to their current position. Handles intermediate
+        points for restricted zone transit.
 
-        Shows trails including midpoints for restricted zone entries
+            Parameters:
+        painter -> The active QPainter instance.
+        map_obj -> The Map containing drone path data.
+        current_step -> The step up to which the trails should be drawn.
+        tr -> A transformation function to convert map coordinates to
+              screen coordinates.
         """
         for drone in map_obj.drones:
             if not drone.path or current_step == 0:
@@ -218,7 +278,18 @@ class MapWidget(QWidget):
         self, painter: QPainter, map_obj: Map, current_step: int,
         tr: Callable[[float, float], QPoint]
     ) -> None:
-        """Draw drones at their current positions"""
+        """
+            Description:
+        Iterates through all drones in the map, calculates their specific
+        coordinates for the current simulation step, and renders them
+        onto the canvas.
+
+            Parameters:
+        painter -> The active QPainter instance.
+        map_obj -> The Map container holding the list of drones.
+        current_step -> The active turn index used to determine positions.
+        tr -> The coordinate transformation function.
+        """
         for drone in map_obj.drones:
             pos = self._get_drone_position_at_step(
                     drone, map_obj, current_step
@@ -230,11 +301,19 @@ class MapWidget(QWidget):
     def _get_drone_position_at_step(
         self, drone: Drone, map_obj: Map, step: int
     ) -> tuple[float, float] | None:
-        """Calculate drone position at a given step
+        """
+            Description:
+        Calculates the exact map coordinates of a drone at a specific step,
+        interpolating positions for drones currently in transit to restricted
+        zones.
 
-        Returns:
-            (x, y) position, or None if drone doesn't exist at this step
-            For restricted zones: returns midpoint of connection on first turn
+            Parameters:
+        drone -> The Drone instance to locate.
+        map_obj -> The Map data for start hub context.
+        step -> The turn index to calculate the position for.
+
+            Return value:
+        A tuple of (x, y) map coordinates or None.
         """
         if step == 0:
             # All drones start at start_hub
@@ -287,7 +366,16 @@ class MapWidget(QWidget):
     def _draw_drone_at(
         self, painter: QPainter, drone: Drone, pos: QPoint
     ) -> None:
-        """Draw a single drone at a position"""
+        """
+            Description:
+        Renders a drone as a colored circle with its ID labeled inside at a
+        specific screen position.
+
+            Parameters:
+        painter -> The active QPainter instance.
+        drone -> The drone object to represent.
+        pos -> The pixel coordinates on the canvas.
+        """
         size = int(min(30, 12 * self.zoom_level))
         half = size // 2
 
@@ -316,7 +404,18 @@ class MapWidget(QWidget):
         )
 
     def _get_drone_color(self, drone_id: int) -> QColor:
-        """Get a consistent color for a drone based on its ID"""
+        """
+            Description:
+        Maps a drone's unique ID to a consistent color from a predefined
+        palette, ensuring that the same drone always appears in the same
+        color throughout the simulation.
+
+            Parameters:
+        drone_id -> The ID of the drone to colorize.
+
+            Return value:
+        A QColor object assigned to that specific drone.
+        """
         # Use a color palette
         colors = [
             QColor(255, 100, 100),  # Red
@@ -331,6 +430,17 @@ class MapWidget(QWidget):
         return colors[(drone_id - 1) % len(colors)]
 
     def _draw_hub_at(self, painter: QPainter, hub: Hub, pos: QPoint) -> None:
+        """
+            Description:
+        Draws a hub's physical representation based on its type (Circle for
+        Normal, Triangle for Priority, Square for Restricted, Cross for
+        Blocked).
+
+            Parameters:
+        painter -> The active QPainter instance.
+        hub -> The Hub object defining the shape and type.
+        pos -> The pixel coordinates on the canvas.
+        """
         size: int = int(min(60, 20 * self.zoom_level))
         half: int = size // 2
 
@@ -360,6 +470,18 @@ class MapWidget(QWidget):
             painter.drawLine(x + half, y - half, x - half, y + half)
 
     def _get_hub_brush(self, color_val: str | None, pos: QPoint) -> QBrush:
+        """
+            Description:
+        Determines the fill style for a hub, handling both solid colors and
+        conical "rainbow" gradients for specialized hubs.
+
+            Parameters:
+        color_val -> The color string or "rainbow" identifier.
+        pos -> The position of the hub (required for gradient alignment).
+
+            Return value:
+        A QBrush configured with the appropriate color or gradient.
+        """
         if color_val == "rainbow":
             gradient = QConicalGradient(float(pos.x()), float(pos.y()), 0.0)
             stops = [

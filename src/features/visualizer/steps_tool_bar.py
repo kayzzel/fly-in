@@ -11,34 +11,44 @@ if TYPE_CHECKING:
 
 
 class PlayerToolBar(QToolBar):
-    """Toolbar for controlling playback and loading new maps."""
+    """
+        Description:
+    A specialized toolbar providing playback controls for the drone simulation.
+    It manages the simulation timer, handles user interactions for navigation
+    (play, pause, next, previous, restart), and facilitates loading new map
+    files through a file dialog.
 
-    # Signals for navigation
+        Attributes:
+    request_next -> Signal emitted to advance the simulation by one step.
+    request_prev -> Signal emitted to move the simulation back by one step.
+    request_restart -> Signal emitted to reset the simulation to the beginning.
+    request_tick -> Signal emitted by the internal timer to automate playback.
+    request_map_load -> Signal emitted with a file path str to load a new map.
+    playing -> Boolean tracking the current playback state.
+    timer -> QTimer instance controlling the speed of the simulation playback.
+    """
+
     request_next = pyqtSignal()
     request_prev = pyqtSignal()
     request_restart = pyqtSignal()
     request_tick = pyqtSignal()
-    # New signal emitted when a new map file is selected
     request_map_load = pyqtSignal(str)
 
     def __init__(self, parent: MainWindow) -> None:
         super().__init__("Controls", parent)
 
-        # 1. Create Actions
         self.load_action = QAction("📂", self)
         self.play_pause_action = QAction("⏵", self)
         self.restart_action = QAction("⟳", self)
         self.prev_action = QAction("⏮", self)
         self.next_action = QAction("⏭", self)
 
-        # 2. Connect Signals
         self.load_action.triggered.connect(self.on_load_file)
         self.play_pause_action.triggered.connect(self.on_play_pause)
         self.restart_action.triggered.connect(self.request_restart)
         self.prev_action.triggered.connect(self.request_prev)
         self.next_action.triggered.connect(self.request_next)
 
-        # 3. Layout Construction
         def make_spacer() -> QWidget:
             spacer = QWidget()
             spacer.setSizePolicy(
@@ -47,11 +57,9 @@ class PlayerToolBar(QToolBar):
             )
             return spacer
 
-        # Add Load button to the far left
         self.addAction(self.load_action)
         self.addWidget(make_spacer())
 
-        # Center the playback controls
         self.addAction(self.prev_action)
         self.addAction(self.play_pause_action)
         self.addAction(self.next_action)
@@ -61,15 +69,18 @@ class PlayerToolBar(QToolBar):
 
         self.setStyleSheet("QToolButton { font-size: 20px; padding: 5px; }")
 
-        # 4. Timer State
         self.playing = False
         self.timer = QTimer()
         self.timer.setInterval(500)
         self.timer.timeout.connect(self.request_tick)
 
     def on_load_file(self) -> None:
-        """Open a file dialog and emit the load signal if a file is chosen."""
-        # Stop playback while choosing a file
+        """
+            Description:
+        Suspends playback and opens a native system file dialog to allow the
+        user to select a map text file. If a file is selected, it emits the
+        request_map_load signal.
+        """
         if self.playing:
             self.on_play_pause()
 
@@ -84,11 +95,15 @@ class PlayerToolBar(QToolBar):
             self.request_map_load.emit(file_path)
 
     def on_play_pause(self) -> None:
-        """Toggle playback state."""
+        """
+            Description:
+        Toggles the playback state between playing and paused. It updates
+        the action icon, starts or stops the timer, and triggers a restart
+        if the play button is pressed while at the end of a simulation.
+        """
         self.playing = not self.playing
         parent = self.parent()
 
-        # Safe check for MainWindow attributes to avoid mypy errors
         if self.playing:
             if (parent is not None and
                     hasattr(parent, "steps") and
@@ -103,7 +118,11 @@ class PlayerToolBar(QToolBar):
             self.timer.stop()
 
     def stop(self) -> None:
-        """Stop the timer and reset button text."""
+        """
+            Description:
+        Forces the playback to stop, halting the timer and resetting the
+        internal state and UI button to the "paused" representation.
+        """
         self.timer.stop()
         self.playing = False
         self.play_pause_action.setText("⏵")
