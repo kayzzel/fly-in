@@ -96,7 +96,7 @@ class MapData:
                 f"(line {i + 1})\n"
                 f'"{lines[i]}"'
             )
-        nb_drones: str = lines[i].split("#")[0].split(":")[1].strip()
+        nb_drones: str = lines[i].split("#")[0].split(":", 1)[1].strip()
 
         # Look if the value of drone number is a positive int
         if not nb_drones.isdigit():
