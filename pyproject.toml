@@ -11,21 +11,6 @@ python = "^3.10"
 pyqt6 = "^6.10.2"
 flake8 = "^7.0.0"
 mypy = "^1.8.0"
-pytest = "^8.0.0"
-pytest-cov = "^4.0.0"
-black = "^24.0.0"
-isort = "^5.13.0"
-
-[tool.black]
-line-length = 79
-
-[tool.isort]
-profile = "black"
-line_length = 79
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-pythonpath = ["."]
 
 [[tool.mypy.overrides]]
 module = [
