@@ -232,6 +232,10 @@ class MapData:
             )
 
         if len(data) == 3:
+            if line.startswith("start_hub:") or line.startswith("end_hub:"):
+                return HubData(
+                        name, int(x), int(y), max_drones=self.__drones_nb
+                    ), None
             return HubData(name, int(x), int(y)), None
 
         metadata_array: str = data[3]
