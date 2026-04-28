@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from .Hub import Hub
+
+from .Hub import Hub, HubType
 
 
 class Drone:
@@ -73,3 +74,39 @@ class Drone:
             return None
 
         return f"D{self.drone_id}-{hub.name}"
+
+    def get_position_at_step(self, step: int) -> tuple[Hub, Hub | None]:
+        """
+            Description:
+        Calculates the drone's spatial status at a specific simulation turn.
+        It distinguishes between being stationary within a hub or being
+        "in transit" during the first turn of a restricted zone entry
+
+            Parameters:
+        step -> The current turn index in the simulation.
+
+            Return value:
+        A tuple (Hub, None) if the drone is occupied by a single hub,
+        or (Hub, Hub) representing (origin, destination) if the drone
+        is currently traversing a connection.
+        """
+        if step >= len(self.path):
+            last = [h for h in self.path if h is not None][-1]
+            return (last, None)
+
+        actual_step = self.path[step]
+        if actual_step:
+            return (actual_step, None)
+
+        prev_hubs = [hub for hub in self.path[:step] if hub]
+        last_hub = prev_hubs[-1] if prev_hubs else self.path[0]
+
+        if not (last_hub):
+            raise ValueError("error in the path")
+
+        if step + 1 < len(self.path):
+            next_hub = self.path[step + 1]
+            if next_hub and next_hub.hub_type == HubType.RESTRICTED:
+                return (last_hub, next_hub)
+
+        return (last_hub, None)
