@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 
-from .Hub import Hub, HubType
+from .Hub import Hub
+from ...utils.types import HubType
 
 
 class Drone:
